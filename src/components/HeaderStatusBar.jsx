@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   Coins, Gem, Sparkles, User, Skull, Heart, Zap,
   Bell, BellOff, CheckCheck, Trash2, X, Swords, Pickaxe,
-  Users, AlertCircle, Award, ChevronRight, FlaskConical, Plus
+  Users, AlertCircle, Award, ChevronRight, FlaskConical, Plus, Globe
 } from 'lucide-react';
 import { ASSETS } from '../config/assets';
 import { DEFAULT_PLAYER_STATS } from '../config/gameData';
@@ -39,6 +39,7 @@ export default function HeaderStatusBar({
   layoutMode = 'mobile',
   onNavigateTab,
   onUpdatePlayer,
+  onOpenPortal,
 }) {
   if (!player) return null;
 
@@ -319,6 +320,19 @@ export default function HeaderStatusBar({
 
         {/* Sağ Taraf: BİLDİRİM ÇUBUĞU + Para Birimleri (Altın / Kristal) + Zindan Rozeti + EXP Barı */}
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap ml-auto">
+          {/* 🌐 Web Portalı / Ana Sayfa Butonu */}
+          {onOpenPortal && (
+            <button
+              type="button"
+              onClick={onOpenPortal}
+              className="p-2 rounded-lg border border-amber-500/30 bg-black/60 text-amber-300 hover:border-amber-400 hover:bg-amber-500/20 transition-all flex items-center gap-1.5 text-xs font-cinzel cursor-pointer shadow-sm group"
+              title="Elves Online Portalı / Ana Sayfa"
+            >
+              <Globe className="w-4 h-4 text-amber-400 group-hover:rotate-45 transition-transform" />
+              <span className="hidden md:inline font-semibold">Portal</span>
+            </button>
+          )}
+
           {/* 🔔 BİLDİRİM ÇUBUĞU / BUTONU (Altının hemen solunda) */}
           <div className="relative" ref={notifDropdownRef}>
             <button

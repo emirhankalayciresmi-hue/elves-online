@@ -9,13 +9,12 @@ import OrnateFrame from '../../components/OrnateFrame';
 import ImagePlaceholder from '../../components/ImagePlaceholder';
 import { ASSETS } from '../../config/assets';
 import {
-  DEFAULT_PLAYER_STATS,
   KINGDOMS,
   CLASSES,
   calculatePlayerStats,
   MAX_STAT_CAP,
 } from '../../config/gameData';
-import { calculateBadgeStats, BADGE_DEFINITIONS } from '../../config/questData';
+import { calculateBadgeStats } from '../../config/questData';
 
 export default function CharacterTab({
   player,
@@ -39,7 +38,6 @@ export default function CharacterTab({
 
   // Rozet bonusları ve genel istatistikler
   const badgeBonus = calculateBadgeStats(player?.questState?.badgeProgress);
-  const currentLevel = player.level || 1;
   const equippedCount = Object.keys(player?.equipped || {}).length;
 
   // Hesaplanan nihai RPG nitelikleri (Karakter Gelişimi)

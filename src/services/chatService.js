@@ -1,5 +1,6 @@
 // Kadim Elfler - Sohbet & Canlı İletişim Servisi (Chat Service)
-// Çok oyunculu (online) altyapıya hazır, 5 kanallı, Metin2 tarzı eşya linkleme ve sistem duyuruları motoru.
+// Çok oyunculu (online) altyapıya hazır, 5 kanallı, Supabase Realtime destekli motor.
+import { supabase } from './supabaseClient';
 
 export const CHAT_STORAGE_KEY = 'elves_rpg_chat_history';
 
@@ -27,7 +28,7 @@ export const INITIAL_CHAT_MESSAGES = [
 ];
 
 /**
- * Mesajları LocalStorage'dan yükler (Demo bot mesajlarını temizler)
+ * Mesajları LocalStorage'dan yükler
  */
 export function loadChatHistory() {
   try {
@@ -36,7 +37,6 @@ export function loadChatHistory() {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed) || parsed.length === 0) return INITIAL_CHAT_MESSAGES;
 
-    // Eski demo sahte bot mesajlarını temizle:
     const demoSenders = ['Sylvaen_Elf', 'Aeliana_Sun', 'Lorvath_Muhafız', 'Lonca_Lideri', 'Ithil_Okçu', 'KRALLIK MÜHÜRÜ'];
     const hasDemo = parsed.some((m) => demoSenders.includes(m.sender));
     if (hasDemo) {
@@ -88,7 +88,7 @@ export function createChatMessage({
     senderClass: senderClass || 'Savaşçı',
     senderLevel: senderLevel || 1,
     text: (text || '').trim(),
-    linkedItem, // { name, rarity, image, slot, desc, sellPrice ... }
+    linkedItem,
     timeStr,
     timestamp: Date.now(),
     isMe,
@@ -114,6 +114,117 @@ export function createSystemAnnouncement(text, priority = 'normal') {
     timeStr,
     timestamp: Date.now(),
     isSystem: true,
-    priority, // 'normal' | 'high'
+    priority,
   };
+}
+
+/**
+ * Supabase'den son mesajları çeker
+ */
+export async function fetchCloudChatMessages(limit = 60) {
+  try {
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.warn('Chat fetch warning:', error.message);
+      return [];
+    }
+
+    if (!data) return [];
+
+    // Chronological order (oldest to newest)
+    return data.reverse().map((row) => {
+      const d = new Date(row.created_at);
+      const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+      return {
+        id: row.id,
+        channel: row.channel || 'general',
+        sender: row.sender_name,
+        senderKingdom: row.sender_kingdom || 'Kadim Krallık',
+        senderClass: row.sender_class || 'Savaşçı',
+        senderLevel: row.sender_level || 1,
+        text: row.text,
+        linkedItem: row.linked_item,
+        isSystem: row.is_system || false,
+        timeStr,
+        timestamp: d.getTime(),
+        isMe: false,
+      };
+    });
+  } catch (err) {
+    console.error('Chat fetch exception:', err);
+    return [];
+  }
+}
+
+/**
+ * Supabase'e mesaj kaydeder
+ */
+export async function sendChatMessageToCloud(msg) {
+  try {
+    const payload = {
+      channel: msg.channel || 'general',
+      sender_name: msg.sender,
+      sender_kingdom: msg.senderKingdom,
+      sender_class: msg.senderClass,
+      sender_level: msg.senderLevel || 1,
+      text: msg.text,
+      linked_item: msg.linkedItem || null,
+      is_system: msg.isSystem || false,
+    };
+
+    const { error } = await supabase.from('chat_messages').insert([payload]);
+    if (error) {
+      console.warn('Cloud message insert error:', error.message);
+    }
+  } catch (err) {
+    console.error('Cloud message insert exception:', err);
+  }
+}
+
+/**
+ * Realtime Chat Dinleyicisi
+ */
+export function subscribeToRealtimeChat(onNewMessage) {
+  try {
+    const channel = supabase
+      .channel('chat_realtime_channel')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+        (payload) => {
+          const row = payload.new;
+          if (!row) return;
+          const d = new Date(row.created_at || Date.now());
+          const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+          const formattedMsg = {
+            id: row.id,
+            channel: row.channel || 'general',
+            sender: row.sender_name,
+            senderKingdom: row.sender_kingdom || 'Kadim Krallık',
+            senderClass: row.sender_class || 'Savaşçı',
+            senderLevel: row.sender_level || 1,
+            text: row.text,
+            linkedItem: row.linked_item,
+            isSystem: row.is_system || false,
+            timeStr,
+            timestamp: d.getTime(),
+            isMe: false,
+          };
+          onNewMessage(formattedMsg);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  } catch (err) {
+    console.error('Subscribe to realtime chat error:', err);
+    return () => {};
+  }
 }

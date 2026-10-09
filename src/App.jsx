@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import HeaderStatusBar from './components/HeaderStatusBar';
 import BottomNav from './components/BottomNav';
 import DesktopSidebar from './components/DesktopSidebar';
 import MobileMenuDrawer from './components/MobileMenuDrawer';
 
-// Onboarding
+// Portal & Onboarding
+import LandingPortal from './views/LandingPortal/LandingPortal';
 import LayoutModeSelect from './views/Onboarding/LayoutModeSelect';
 import KingdomSelect from './views/Onboarding/KingdomSelect';
 import ClassSelect from './views/Onboarding/ClassSelect';
@@ -39,10 +40,23 @@ import {
 } from './services/gameEngine';
 import { useGameTimers } from './hooks/useGameTimers';
 import MiniChatDock from './components/MiniChatDock';
-import { loadChatHistory, saveChatHistory, createSystemAnnouncement } from './services/chatService';
+import {
+  loadChatHistory,
+  saveChatHistory,
+  createSystemAnnouncement,
+  fetchCloudChatMessages,
+  sendChatMessageToCloud,
+  subscribeToRealtimeChat,
+} from './services/chatService';
 import { PlayerProfileProvider } from './context/PlayerProfileContext';
 import { loadPartiesFromStorage, savePartiesToStorage } from './config/partyData';
 import { invitePlayerToPartyService } from './services/partyService';
+import { onAuthStateChange, signOutUser, getCurrentUser } from './services/authService';
+import {
+  saveCharacterToCloud,
+  fetchCharacterByUserId,
+  debouncedSyncPlayerToCloud,
+} from './services/cloudCharacterService';
 
 const CHAR_STORAGE_KEY = 'elves_rpg_character_data';
 const MODE_STORAGE_KEY = 'elves_rpg_layout_mode';
@@ -65,6 +79,12 @@ try {
 }
 
 export default function App() {
+  // Portal vs Game view: 'portal' | 'game'
+  const [viewMode, setViewMode] = useState('portal');
+
+  // Authenticated Supabase User
+  const [currentUser, setCurrentUser] = useState(null);
+
   // Layout mode: 'mobile' | 'pc' | null
   const [layoutMode, setLayoutMode] = useState(() => {
     try {
@@ -107,7 +127,6 @@ export default function App() {
         equipped: {},
         ...parsed,
       };
-      // Eski kayıtlardan kalan 1500 HP veya eksik stat puanlarını standardize et:
       if (!parsed.allocatedStats) {
         basePlayer.allocatedStats = { hp: 0, str: 0, agi: 0, int: 0 };
         basePlayer.maxHp = 500;
@@ -132,18 +151,94 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('character');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // Storage save helper
-  const savePlayerToStorage = useCallback((updated) => {
-    if (!updated) return;
-    try {
-      localStorage.setItem(CHAR_STORAGE_KEY, JSON.stringify(updated));
-    } catch (e) {
-      console.error('Storage save error:', e);
-    }
+  // Storage and cloud save helper
+  const savePlayerToStorage = useCallback(
+    (updated) => {
+      if (!updated) return;
+      try {
+        localStorage.setItem(CHAR_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Storage save error:', e);
+      }
+      debouncedSyncPlayerToCloud(updated, currentUser?.id);
+    },
+    [currentUser]
+  );
+
+  // Supabase Auth Listener & Cloud Character Fetch
+  useEffect(() => {
+    getCurrentUser().then((user) => {
+      if (user) {
+        setCurrentUser(user);
+        fetchCharacterByUserId(user.id).then((cloudChar) => {
+          if (cloudChar) {
+            const ensured = ensurePlayerQuestState(cloudChar);
+            setPlayer(ensured);
+            try {
+              localStorage.setItem(CHAR_STORAGE_KEY, JSON.stringify(ensured));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        });
+      }
+    });
+
+    const unsubscribeAuth = onAuthStateChange((event, session) => {
+      const user = session?.user || null;
+      setCurrentUser(user);
+      if (user) {
+        fetchCharacterByUserId(user.id).then((cloudChar) => {
+          if (cloudChar) {
+            const ensured = ensurePlayerQuestState(cloudChar);
+            setPlayer(ensured);
+            try {
+              localStorage.setItem(CHAR_STORAGE_KEY, JSON.stringify(ensured));
+            } catch (e) {
+              console.error(e);
+            }
+            setViewMode('game');
+          }
+        });
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+    };
   }, []);
 
-  // Chat messages state (multiplayer ready)
+  // Chat messages state (multiplayer & realtime ready)
   const [chatMessages, setChatMessages] = useState(() => loadChatHistory());
+
+  // Cloud Chat Fetch & Realtime Subscription
+  useEffect(() => {
+    fetchCloudChatMessages(50).then((cloudMsgs) => {
+      if (cloudMsgs && cloudMsgs.length > 0) {
+        setChatMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id));
+          const newMsgs = cloudMsgs.filter((m) => !existingIds.has(m.id));
+          if (newMsgs.length === 0) return prev;
+          const merged = [...prev, ...newMsgs];
+          saveChatHistory(merged);
+          return merged;
+        });
+      }
+    });
+
+    const unsubscribeChat = subscribeToRealtimeChat((newMsg) => {
+      setChatMessages((prev) => {
+        if (prev.some((m) => m.id === newMsg.id)) return prev;
+        const updated = [...prev, newMsg];
+        saveChatHistory(updated);
+        return updated;
+      });
+    });
+
+    return () => {
+      unsubscribeChat();
+    };
+  }, []);
 
   const handleSendMessage = useCallback((newMsg) => {
     setChatMessages((prev) => {
@@ -151,6 +246,8 @@ export default function App() {
       saveChatHistory(updated);
       return updated;
     });
+    // Send to Supabase cloud
+    sendChatMessageToCloud(newMsg);
   }, []);
 
   const broadcastSystemAnnouncement = useCallback((text, priority = 'normal') => {
@@ -160,6 +257,7 @@ export default function App() {
       saveChatHistory(updated);
       return updated;
     });
+    sendChatMessageToCloud(annMsg);
   }, []);
 
   // Profil Kartı Fısıltı & Sosyal Eylemler
@@ -269,6 +367,7 @@ export default function App() {
     const playerWithQuests = ensurePlayerQuestState(newPlayer);
     setPlayer(playerWithQuests);
     savePlayerToStorage(playerWithQuests);
+    saveCharacterToCloud(playerWithQuests, currentUser?.id);
   };
 
   // Stat Allocation handlers
@@ -284,7 +383,7 @@ export default function App() {
     savePlayerToStorage(updated);
   };
 
-  // Reset character (for testing)
+  // Reset character
   const handleResetPlayer = () => {
     localStorage.removeItem(CHAR_STORAGE_KEY);
     setPlayer(null);
@@ -295,7 +394,7 @@ export default function App() {
     setIsDrawerOpen(false);
   };
 
-  // Manual claim dungeon (if player manually claims)
+  // Manual claim dungeon
   const handleClaimDungeon = () => {
     if (!player?.activeDungeon) return null;
     const updated = executeDungeonCompletion(player, player.activeDungeon, false);
@@ -349,7 +448,22 @@ export default function App() {
 
   const isPC = layoutMode === 'pc';
 
-  // 1. If layout mode is not yet chosen, show LayoutModeSelect
+  // 1. If user is in Portal mode, render LandingPortal
+  if (viewMode === 'portal') {
+    return (
+      <LandingPortal
+        onEnterGame={() => setViewMode('game')}
+        currentUser={currentUser}
+        savedCharacter={player}
+        onSignOut={async () => {
+          await signOutUser();
+          setCurrentUser(null);
+        }}
+      />
+    );
+  }
+
+  // 2. If in Game mode but layout mode is not yet chosen, show LayoutModeSelect
   if (!layoutMode) {
     return (
       <div className="min-h-screen bg-[#040709] text-slate-100 flex items-center justify-center p-4 relative overflow-x-hidden">
@@ -494,6 +608,7 @@ export default function App() {
             layoutMode={layoutMode}
             onChangeLayoutMode={handleChangeLayoutMode}
             onResetPlayer={handleResetPlayer}
+            onOpenPortal={() => setViewMode('portal')}
           />
         );
       default:
@@ -568,6 +683,7 @@ export default function App() {
                 setPlayer(updated);
                 savePlayerToStorage(updated);
               }}
+              onOpenPortal={() => setViewMode('portal')}
             />
 
             {/* PC Mode: Full Width Sidebar + Content + Mini Chat Dock */}
@@ -614,9 +730,13 @@ export default function App() {
           /* Onboarding Wizard */
           <div className={`flex-1 flex flex-col overflow-y-auto ${isPC ? 'w-full p-4 sm:p-8' : 'p-4'}`}>
             <div className="text-center pt-2 pb-3 border-b border-amber-500/20 mb-4 flex items-center justify-between">
-              <span className="text-[10px] font-mono text-slate-500 uppercase">
-                Mod: {isPC ? 'PC Geniş Ekran' : 'Mobil'}
-              </span>
+              <button
+                type="button"
+                onClick={() => setViewMode('portal')}
+                className="text-[10px] font-mono text-amber-400 hover:text-amber-300 underline cursor-pointer"
+              >
+                ← Portala Dön
+              </button>
               <h2 className="font-cinzel text-xs uppercase tracking-[0.3em] text-amber-400/80">
                 Kadim Elven Çağı
               </h2>

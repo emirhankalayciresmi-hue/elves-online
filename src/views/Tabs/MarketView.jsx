@@ -44,6 +44,9 @@ import {
   makeOfferService,
   acceptOfferService,
   declineOfferService,
+  fetchCloudMarketStalls,
+  syncPlayerStallToCloud,
+  subscribeToRealtimeMarket,
 } from '../../services/marketService';
 
 export default function MarketView({
@@ -102,6 +105,37 @@ export default function MarketView({
     setToast({ text, type });
     setTimeout(() => setToast(null), 4000);
   };
+
+  // Supabase Cloud Pazar Senkronizasyonu
+  useEffect(() => {
+    fetchCloudMarketStalls().then((cloudStalls) => {
+      if (cloudStalls && cloudStalls.length > 0) {
+        setMarketStalls(cloudStalls);
+        saveMarketStalls(cloudStalls);
+      }
+    });
+
+    const unsubscribe = subscribeToRealtimeMarket(() => {
+      fetchCloudMarketStalls().then((updated) => {
+        if (updated) {
+          setMarketStalls(updated);
+          saveMarketStalls(updated);
+        }
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Oyuncu kendi tezgahını güncellediğinde buluta senkronize et
+  useEffect(() => {
+    if (playerStall && player?.name) {
+      syncPlayerStallToCloud(playerStall, player?.kingdomName);
+    }
+  }, [playerStall, player?.name, player?.kingdomName]);
+
 
   // Birleşik Tezgah Listesi (Diğer oyuncular + Oyuncunun kendi tezgahı açıksa)
   const allDisplayStalls = useMemo(() => {
