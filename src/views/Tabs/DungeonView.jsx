@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Skull, Swords, Users, Clock, Award, ShieldAlert, Sparkles,
-  CheckCircle2, FastForward, Trophy, Zap, XCircle, Package
+  CheckCircle2, Trophy, Zap, XCircle, Package
 } from 'lucide-react';
 import OrnateFrame from '../../components/OrnateFrame';
 import SubmenuBar from '../../components/SubmenuBar';
@@ -23,7 +23,6 @@ export default function DungeonView({
   onStartDungeon,
   onClaimDungeon,
   onCancelDungeon,
-  onFastForwardDungeon,
   onDismissReport,
 }) {
   const [activeSubmenu, setActiveSubmenu] = useState('solo');
@@ -242,16 +241,6 @@ export default function DungeonView({
                     </p>
                   </div>
                 </div>
-
-                {onFastForwardDungeon && (
-                  <button
-                    type="button"
-                    onClick={() => onFastForwardDungeon?.('reset_cooldown')}
-                    className="px-2.5 py-1 text-[11px] font-mono rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/40 cursor-pointer transition-all"
-                  >
-                    Test: Beklemeyi Sıfırla
-                  </button>
-                )}
               </div>
             </OrnateFrame>
           )}
@@ -486,17 +475,7 @@ export default function DungeonView({
               </div>
 
               {/* Eylem & Kontrol Butonları */}
-              <div className="pt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => onFastForwardDungeon?.()}
-                    type="button"
-                    className="px-2.5 py-1 text-[11px] font-mono rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 cursor-pointer transition-all"
-                  >
-                    <FastForward className="w-3 h-3" /> Test: +1 Canavar Kes (Hızlı Vuruş)
-                  </button>
-                </div>
-
+              <div className="pt-2 border-t border-white/5 flex flex-wrap items-center justify-end gap-2">
                 <button
                   onClick={() => {
                     if (window.confirm('Zindandan çekilmek istediğinize emin misiniz? Topladığınız tüm EXP, altın ve düşen eşyalar envanterinizde kalır ancak 5 dakika dinlenme süresi başlar.')) {

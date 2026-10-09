@@ -180,156 +180,26 @@ export function getPartySynergyBonus(memberCount = 1) {
   };
 }
 
-// Varsayılan Dünya Grupları (Grup Bul ekranında canlılık için)
-export const DEFAULT_PARTIES = [
-  {
-    id: 'party_1',
-    name: 'Kadim Zindan Kaşifleri',
-    leader: 'Aeliana_Sun',
-    targetId: 'group_dungeon',
-    targetName: 'Grup Zindanı (Tapınak Mahzeni)',
-    targetCategory: 'Zindan',
-    maxMembers: 4,
-    minLevel: 5,
-    distribution: 'equal',
-    isOpen: true,
-    createdAt: '2026-10-06T10:00:00Z',
-    members: [
-      {
-        name: 'Aeliana_Sun',
-        level: 12,
-        class: 'Büyücü',
-        isLeader: true,
-        hp: 1850,
-        maxHp: 1850,
-        isReady: true,
-        roleId: 'speed_caster',
-      },
-      {
-        name: 'Sylv_Hunter',
-        level: 10,
-        class: 'Okçu',
-        isLeader: false,
-        hp: 2100,
-        maxHp: 2100,
-        isReady: true,
-        roleId: 'attacker',
-      },
-      {
-        name: 'Thalas_Shield',
-        level: 11,
-        class: 'Savaşçı',
-        isLeader: false,
-        hp: 3400,
-        maxHp: 3400,
-        isReady: false,
-        roleId: 'tank_hp',
-      },
-    ],
-  },
-  {
-    id: 'party_2',
-    name: 'Zümrüt Boss Avcıları',
-    leader: 'Kaelen_Shadow',
-    targetId: 'boss',
-    targetName: 'Kadim Boss Avı',
-    targetCategory: 'Boss',
-    maxMembers: 4,
-    minLevel: 8,
-    distribution: 'level_based',
-    isOpen: true,
-    createdAt: '2026-10-06T11:30:00Z',
-    members: [
-      {
-        name: 'Kaelen_Shadow',
-        level: 15,
-        class: 'Assassin',
-        isLeader: true,
-        hp: 2600,
-        maxHp: 2600,
-        isReady: true,
-        roleId: 'attacker',
-      },
-      {
-        name: 'Lorvath_Guard',
-        level: 14,
-        class: 'Savaşçı',
-        isLeader: false,
-        hp: 3800,
-        maxHp: 3800,
-        isReady: true,
-        roleId: 'defender',
-      },
-    ],
-  },
-  {
-    id: 'party_3',
-    name: 'Kraliyet Kervan Muhafızları',
-    leader: 'NightBlade',
-    targetId: 'caravan',
-    targetName: 'Kervan Muhafızlığı',
-    targetCategory: 'Kervan',
-    maxMembers: 6,
-    minLevel: 4,
-    distribution: 'equal',
-    isOpen: true,
-    createdAt: '2026-10-06T12:00:00Z',
-    members: [
-      {
-        name: 'NightBlade',
-        level: 9,
-        class: 'Assassin',
-        isLeader: true,
-        hp: 1900,
-        maxHp: 1900,
-        isReady: true,
-        roleId: 'blocker',
-      },
-    ],
-  },
-  {
-    id: 'party_4',
-    name: 'Derin Kristal Madencileri',
-    leader: 'Eldarion_Glow',
-    targetId: 'mine',
-    targetName: 'Kristal Maden Seferi',
-    targetCategory: 'Maden',
-    maxMembers: 4,
-    minLevel: 1,
-    distribution: 'equal',
-    isOpen: true,
-    createdAt: '2026-10-06T13:00:00Z',
-    members: [
-      {
-        name: 'Eldarion_Glow',
-        level: 6,
-        class: 'Büyücü',
-        isLeader: true,
-        hp: 1400,
-        maxHp: 1400,
-        isReady: true,
-        roleId: 'speed_caster',
-      },
-      {
-        name: 'Vaelin_Oak',
-        level: 5,
-        class: 'Savaşçı',
-        isLeader: false,
-        hp: 2200,
-        maxHp: 2200,
-        isReady: true,
-        roleId: 'defender',
-      },
-    ],
-  },
-];
+// Varsayılan Dünya Grupları (Oyuncuların kurduğu gerçek gruplar tutulur)
+export const DEFAULT_PARTIES = [];
 
 export function loadPartiesFromStorage() {
   try {
     const raw = localStorage.getItem(PARTY_STORAGE_KEY);
     if (!raw) return DEFAULT_PARTIES;
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_PARTIES;
+    if (!Array.isArray(parsed) || parsed.length === 0) return DEFAULT_PARTIES;
+
+    // Eski demo sahte grupları (party_1, party_2 vb.) temizle:
+    const isOldDemo = parsed.some(
+      (p) => p.id === 'party_1' || p.leader === 'Aeliana_Sun' || p.leader === 'Kaelen_Shadow' || p.leader === 'Thalorien'
+    );
+    if (isOldDemo) {
+      localStorage.removeItem(PARTY_STORAGE_KEY);
+      return [];
+    }
+
+    return parsed;
   } catch (e) {
     console.error('Parties load error:', e);
     return DEFAULT_PARTIES;

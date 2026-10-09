@@ -15,14 +15,13 @@ export default function BossView({
   player,
   layoutMode = 'mobile',
   onBossVictory,
-  onResetBossCooldown,
 }) {
   const [activeSubmenu, setActiveSubmenu] = useState('solo');
   const [activeBattleBoss, setActiveBattleBoss] = useState(null);
   const [battleState, setBattleState] = useState(null); // 'fighting' | 'victory' | 'defeat'
   const [battleLog, setBattleLog] = useState([]);
   const [bossCurrentHp, setBossCurrentHp] = useState(0);
-  const [playerCurrentHp, setPlayerCurrentHp] = useState(1500);
+  const [playerCurrentHp, setPlayerCurrentHp] = useState(player?.hp || 500);
   const [potionsLeft, setPotionsLeft] = useState(3);
   const [battleRewards, setBattleRewards] = useState(null);
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -149,17 +148,6 @@ export default function BossView({
     ].slice(-6));
   };
 
-  // Instant finish / Auto battle
-  const handleFastForwardBattle = () => {
-    if (!activeBattleBoss || battleState !== 'fighting') return;
-    setBossCurrentHp(0);
-    const newLogs = [
-      ...battleLog,
-      `⚡ Hızlı Savaş uygulandı: ${activeBattleBoss.name} ezici bir güçle alt edildi!`,
-    ];
-    handleVictory(newLogs);
-  };
-
   const handleVictory = (logs) => {
     setBattleState('victory');
     const rewards = rollBossRewards(activeBattleBoss, player?.classId || 'warrior');
@@ -247,17 +235,6 @@ export default function BossView({
                 <span>Bekleme: <strong>{formatCooldown(remainingCooldownMs)}</strong></span>
               </div>
             )}
-
-            {/* Test Helper: Reset 6-hour Cooldown */}
-            <button
-              type="button"
-              onClick={() => onResetBossCooldown?.(activeSubmenu)}
-              className="p-1.5 rounded bg-black/60 border border-slate-700 hover:border-amber-400 text-slate-400 hover:text-amber-300 text-xs flex items-center gap-1 cursor-pointer transition-all"
-              title="Test: 6 Saatlik Bekleme Süresini Sıfırla"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span className="hidden md:inline text-[10px] font-mono">Süreyi Sıfırla</span>
-            </button>
           </div>
         </div>
       </OrnateFrame>
@@ -613,16 +590,6 @@ export default function BossView({
                   >
                     <Heart className="w-4 h-4 text-rose-400 fill-rose-500/30" />
                     <span>İksir ({potionsLeft})</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleFastForwardBattle}
-                    className="px-3.5 py-2.5 text-xs font-mono text-amber-300 bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 rounded-lg flex items-center gap-1.5 flex-shrink-0 cursor-pointer transition-all"
-                    title="Anında Zafer Testi"
-                  >
-                    <Zap className="w-4 h-4 text-amber-400" />
-                    <span>Hızlı Bitir</span>
                   </button>
                 </>
               ) : battleState === 'victory' ? (

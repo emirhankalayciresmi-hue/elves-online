@@ -139,27 +139,6 @@ export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
     onAnnouncement?.(`🏃 [${player.name}] "${dungeonName}" zindanından ayrıldı. (5 dk dinlenme süresi devrede)`, 'normal');
   };
 
-  // Bekleme Süresini Sıfırla (Test için)
-  const resetDungeonCooldown = () => {
-    if (!player) return;
-    const updated = { ...player, dungeonCooldownUntil: 0 };
-    setPlayer(updated);
-    onSavePlayer(updated);
-  };
-
-  // Zindan Hızlı Canavar Kesimi (Test: Anında +1 Slot Kes)
-  const fastForwardDungeon = () => {
-    setPlayer((current) => {
-      if (!current?.activeDungeon) return current;
-      const combatRes = processDungeonCombatTick(current);
-      if (combatRes.changed) {
-        onSavePlayer(combatRes.player);
-        return combatRes.player;
-      }
-      return current;
-    });
-  };
-
   // Zindan Raporunu Kapatma
   const dismissDungeonReport = () => {
     setPlayer((current) => {
@@ -202,31 +181,6 @@ export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
     onSavePlayer(updated);
   };
 
-  // Madencilik Hızlı Tamamlama (Test)
-  const fastForwardMining = (seconds = 600) => {
-    setPlayer((current) => {
-      if (!current?.activeMine) return current;
-      const currentStart = current.activeMine.startTime || Date.now();
-      const newStart = currentStart - seconds * 1000;
-      const now = Date.now();
-      const durationMs = (current.activeMine.durationSeconds || MINING_DURATION_SECONDS) * 1000;
-
-      if (now - newStart >= durationMs) {
-        const mine = ELVEN_MINES.find((m) => m.id === current.activeMine.mineId) || ELVEN_MINES[0];
-        const completed = executeMiningCompletion(current, mine, true);
-        onSavePlayer(completed);
-        return completed;
-      }
-
-      const updated = {
-        ...current,
-        activeMine: { ...current.activeMine, startTime: newStart },
-      };
-      onSavePlayer(updated);
-      return updated;
-    });
-  };
-
   // Maden Raporunu Kapatma
   const dismissMineReport = () => {
     setPlayer((current) => {
@@ -240,12 +194,9 @@ export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
   return {
     startDungeon,
     cancelDungeon,
-    fastForwardDungeon,
-    resetDungeonCooldown,
     dismissDungeonReport,
     startMining,
     cancelMining,
-    fastForwardMining,
     dismissMineReport,
   };
 }

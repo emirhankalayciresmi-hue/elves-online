@@ -15,7 +15,6 @@ import {
 export default function QuestsTab({
   player,
   layoutMode = 'mobile',
-  onTestProgressQuest,
   onDismissBatchNotice,
 }) {
   const [activeSubmenu, setActiveSubmenu] = useState('daily');
@@ -249,15 +248,10 @@ export default function QuestsTab({
                         <span>Ödül Otomatik Alındı</span>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => onTestProgressQuest?.('daily', q.instanceId)}
-                        className="w-full py-1.5 text-xs font-mono text-amber-300 hover:text-white bg-amber-950/60 hover:bg-amber-900 border border-amber-500/40 rounded flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                        title="Görevi anında tamamlayıp ödülünü topla"
-                      >
-                        <Zap className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Test: Görevi Tamamla</span>
-                      </button>
+                      <div className="w-full py-1.5 text-center text-[11px] font-mono text-slate-400 bg-black/40 rounded border border-white/5 flex items-center justify-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Görev Devam Ediyor ({q.current || 0}/{q.target || 1})</span>
+                      </div>
                     )}
                   </div>
                 </OrnateFrame>
@@ -351,15 +345,10 @@ export default function QuestsTab({
                         <span>Ödül Otomatik Alındı</span>
                       </div>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => onTestProgressQuest?.('weekly', q.instanceId)}
-                        className="w-full py-1.5 text-xs font-mono text-sky-300 hover:text-white bg-sky-950/60 hover:bg-sky-900 border border-sky-500/40 rounded flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                        title="Görevi anında tamamlayıp ödülünü topla"
-                      >
-                        <Zap className="w-3.5 h-3.5 text-sky-400" />
-                        <span>Test: Görevi Tamamla</span>
-                      </button>
+                      <div className="w-full py-1.5 text-center text-[11px] font-mono text-slate-400 bg-black/40 rounded border border-white/5 flex items-center justify-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Haftalık Hedef Sürüyor ({q.current || 0}/{q.target || 1})</span>
+                      </div>
                     )}
                   </div>
                 </OrnateFrame>
@@ -481,19 +470,6 @@ export default function QuestsTab({
                         </span>
                       </span>
                     </div>
-
-                    {/* Test button to advance badge progress */}
-                    {!isMaxTier && (
-                      <button
-                        type="button"
-                        onClick={() => onTestProgressQuest?.('badge', badge.id)}
-                        className="w-full py-1 text-xs font-mono text-purple-300 hover:text-white bg-purple-950/60 hover:bg-purple-900 border border-purple-500/40 rounded flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                        title="Bu rozete hızlı test ilerlemesi ekle"
-                      >
-                        <Zap className="w-3.5 h-3.5 text-purple-400" />
-                        <span>Test: +10 İlerleme Ekle</span>
-                      </button>
-                    )}
                   </div>
                 </OrnateFrame>
               );

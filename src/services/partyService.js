@@ -460,8 +460,8 @@ export function invitePlayerToPartyService(player, targetName, parties) {
     level: randomLevel,
     class: randomClass,
     isLeader: false,
-    hp: 2500 + randomLevel * 160,
-    maxHp: 2500 + randomLevel * 160,
+    hp: 500 + randomLevel * 60,
+    maxHp: 500 + randomLevel * 60,
     isReady: true,
     roleId: null,
   };

@@ -34,7 +34,6 @@ import {
   equipItem,
   unequipItem,
   discardOrSellItem,
-  testProgressQuest,
   allocateStatPoint,
   resetStatPoints,
 } from './services/gameEngine';
@@ -47,6 +46,23 @@ import { invitePlayerToPartyService } from './services/partyService';
 
 const CHAR_STORAGE_KEY = 'elves_rpg_character_data';
 const MODE_STORAGE_KEY = 'elves_rpg_layout_mode';
+const RELEASE_VERSION_KEY = 'elves_rpg_live_release_v1';
+
+// Demo verilerini ve eski sahte karakterleri bir defaya mahsus temizleme
+try {
+  if (localStorage.getItem(RELEASE_VERSION_KEY) !== 'beta_live_v1') {
+    localStorage.removeItem(CHAR_STORAGE_KEY);
+    localStorage.removeItem('elves_rpg_chat_history');
+    localStorage.removeItem('elves_rpg_parties_data');
+    localStorage.removeItem('elves_kadim_guilds');
+    localStorage.removeItem('elves_rpg_market_stalls');
+    localStorage.removeItem('elves_rpg_market_history');
+    localStorage.removeItem('elves_rpg_active_group_expedition');
+    localStorage.setItem(RELEASE_VERSION_KEY, 'beta_live_v1');
+  }
+} catch (e) {
+  console.error('Storage migration error:', e);
+}
 
 export default function App() {
   // Layout mode: 'mobile' | 'pc' | null
@@ -191,12 +207,9 @@ export default function App() {
   const {
     startDungeon,
     cancelDungeon,
-    fastForwardDungeon,
-    resetDungeonCooldown,
     dismissDungeonReport,
     startMining,
     cancelMining,
-    fastForwardMining,
     dismissMineReport,
   } = useGameTimers(player, setPlayer, savePlayerToStorage, broadcastSystemAnnouncement);
 
@@ -321,27 +334,6 @@ export default function App() {
     );
   };
 
-  const handleResetBossCooldown = (category) => {
-    if (!player) return;
-    const currentCooldowns = player.bossCooldowns || {};
-    const updated = {
-      ...player,
-      bossCooldowns: {
-        ...currentCooldowns,
-        [category]: 0,
-      },
-    };
-    setPlayer(updated);
-    savePlayerToStorage(updated);
-  };
-
-  // Quest test simulator & batch celebration dismiss
-  const handleTestProgressQuest = (type, id) => {
-    const updated = testProgressQuest(player, type, id);
-    setPlayer(updated);
-    savePlayerToStorage(updated);
-  };
-
   const handleDismissBatchNotice = () => {
     if (!player?.questState) return;
     const updated = {
@@ -410,7 +402,6 @@ export default function App() {
           <QuestsTab
             player={player}
             layoutMode={layoutMode}
-            onTestProgressQuest={handleTestProgressQuest}
             onDismissBatchNotice={handleDismissBatchNotice}
           />
         );
@@ -447,13 +438,6 @@ export default function App() {
             onStartDungeon={startDungeon}
             onClaimDungeon={handleClaimDungeon}
             onCancelDungeon={cancelDungeon}
-            onFastForwardDungeon={(act) => {
-              if (act === 'reset_cooldown') {
-                resetDungeonCooldown();
-              } else {
-                fastForwardDungeon();
-              }
-            }}
             onDismissReport={dismissDungeonReport}
             onUpdatePlayer={(updated) => {
               setPlayer(updated);
@@ -468,7 +452,6 @@ export default function App() {
             layoutMode={layoutMode}
             onStartMining={startMining}
             onCancelMining={cancelMining}
-            onFastForwardMining={fastForwardMining}
             onDismissMineReport={dismissMineReport}
           />
         );
@@ -478,7 +461,6 @@ export default function App() {
             player={player}
             layoutMode={layoutMode}
             onBossVictory={handleBossVictory}
-            onResetBossCooldown={handleResetBossCooldown}
           />
         );
       case 'kingdom':

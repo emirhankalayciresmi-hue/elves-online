@@ -22,7 +22,6 @@ import {
   LogOut,
   Award,
   Clock,
-  FastForward,
   CheckCircle2,
   Trophy,
   Play,
@@ -410,18 +409,6 @@ export default function PartyView({
 
     handleStartExpedition(expedition, newParty, type);
     showToast(`Hızlı grup kuruldu ve [${expedition.name}] seferi başlatıldı!`, 'success');
-  };
-
-  // Sefer Hızlandırma
-  const handleFastForwardExpedition = () => {
-    if (!activeExpedition) return;
-    const finishedExp = {
-      ...activeExpedition,
-      startTime: Date.now() - (activeExpedition.durationSeconds + 1) * 1000,
-    };
-    localStorage.setItem('elves_rpg_active_group_expedition', JSON.stringify(finishedExp));
-    setActiveExpedition(finishedExp);
-    showToast('Sefer süresi tamamlandı! Ödülleri toplayabilirsiniz.', 'success');
   };
 
   // Sefer Ödüllerini Toplama
@@ -971,17 +958,6 @@ export default function PartyView({
 
               {/* Sefer Butonları */}
               <div className="flex items-center justify-end gap-2 pt-1">
-                {!isExpeditionFinished && (
-                  <ElvenButton
-                    size="sm"
-                    variant="secondary"
-                    icon={FastForward}
-                    onClick={handleFastForwardExpedition}
-                  >
-                    Hızlı Bitir (Test)
-                  </ElvenButton>
-                )}
-
                 {isExpeditionFinished && (
                   <ElvenButton
                     size="sm"
@@ -1153,17 +1129,6 @@ export default function PartyView({
 
               {/* Sefer Butonları */}
               <div className="flex items-center justify-end gap-2 pt-1">
-                {!isExpeditionFinished && (
-                  <ElvenButton
-                    size="sm"
-                    variant="secondary"
-                    icon={FastForward}
-                    onClick={handleFastForwardExpedition}
-                  >
-                    Hızlı Bitir (Test)
-                  </ElvenButton>
-                )}
-
                 {isExpeditionFinished && (
                   <ElvenButton
                     size="sm"
