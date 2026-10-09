@@ -22,11 +22,7 @@ import {
   LogOut,
   Award,
   Clock,
-  CheckCircle2,
   Trophy,
-  Play,
-  Gem,
-  Coins,
 } from 'lucide-react';
 import OrnateFrame from '../../components/OrnateFrame';
 import SubmenuBar from '../../components/SubmenuBar';
@@ -60,7 +56,6 @@ export default function PartyView({
   layoutMode = 'mobile',
   onUpdatePlayer,
   onBroadcast,
-  onNavigateTab,
 }) {
   const isPC = layoutMode === 'pc';
 

@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   Shield,
-  Award,
   Users,
   PlusCircle,
   Search,
@@ -16,9 +15,7 @@ import {
   Check,
   AlertCircle,
   Info,
-  ChevronRight,
   X,
-  ArrowRight,
   TrendingUp,
 } from 'lucide-react';
 import OrnateFrame from '../../components/OrnateFrame';

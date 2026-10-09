@@ -415,7 +415,6 @@ export default function App() {
               savePlayerToStorage(updated);
             }}
             onBroadcast={broadcastSystemAnnouncement}
-            onNavigateTab={setActiveTab}
           />
         );
       case 'guild':

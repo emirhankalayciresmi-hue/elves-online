@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Skull, Swords, Users, Clock, Award, ShieldAlert, Sparkles,
-  CheckCircle2, Trophy, Zap, XCircle, Package
+  Skull, Swords, Clock, Award, ShieldAlert, Sparkles,
+  Trophy, XCircle, Package
 } from 'lucide-react';
 import OrnateFrame from '../../components/OrnateFrame';
 import SubmenuBar from '../../components/SubmenuBar';
@@ -21,14 +21,12 @@ export default function DungeonView({
   player,
   layoutMode = 'mobile',
   onStartDungeon,
-  onClaimDungeon,
   onCancelDungeon,
   onDismissReport,
 }) {
   const [activeSubmenu, setActiveSubmenu] = useState('solo');
   const [selectedBracket, setSelectedBracket] = useState('all');
   const [currentTime, setCurrentTime] = useState(Date.now());
-  const [claimCelebration, setClaimCelebration] = useState(null);
 
   const isPC = layoutMode === 'pc';
   const submenus = ALL_MENUS.find((m) => m.id === 'dungeon')?.submenus || [];
@@ -50,9 +48,8 @@ export default function DungeonView({
   let durationSeconds = 1800; // 30 minutes default
   let progressPercent = 0;
   let remainingSeconds = 1800;
-  let isCompleted = false;
+  let _isCompleted = false;
   let currentMonsterIndex = 0;
-  let currentMonsterHpPercent = 100;
 
   if (activeDungeon) {
     durationSeconds = activeDungeon.durationSeconds || 1800;
@@ -60,12 +57,10 @@ export default function DungeonView({
     elapsedSeconds = Math.max(0, Math.floor((currentTime - start) / 1000));
     progressPercent = Math.min(100, Math.floor((elapsedSeconds / durationSeconds) * 100));
     remainingSeconds = Math.max(0, durationSeconds - elapsedSeconds);
-    isCompleted = progressPercent >= 100;
+    _isCompleted = progressPercent >= 100;
 
     // 5 monsters: each spans 20%
     currentMonsterIndex = Math.min(4, Math.floor(progressPercent / 20));
-    const monsterSegmentProgress = (progressPercent % 20) / 20;
-    currentMonsterHpPercent = isCompleted ? 0 : Math.max(0, Math.round(100 - (monsterSegmentProgress * 100)));
   }
 
   // Filtered solo dungeons by level bracket
@@ -73,14 +68,6 @@ export default function DungeonView({
     if (selectedBracket === 'all') return true;
     return d.bracket === selectedBracket;
   });
-
-  const handleClaim = () => {
-    if (!onClaimDungeon) return;
-    const result = onClaimDungeon();
-    if (result) {
-      setClaimCelebration(result);
-    }
-  };
 
   const formatTime = (secs) => {
     const mins = Math.floor(secs / 60);
