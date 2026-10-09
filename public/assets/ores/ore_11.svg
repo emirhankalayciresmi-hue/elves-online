@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Radial Back Glow -->
+    <radialGradient id="g11_ambient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.45"/>
+      <stop offset="65%" stop-color="#22d3ee" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Main Gradient -->
+    <linearGradient id="g11_main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#cffafe"/>
+      <stop offset="45%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+
+    <!-- Sub Gradient -->
+    <linearGradient id="g11_sub" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#cffafe"/>
+      <stop offset="60%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="f11_glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Aura -->
+  <circle cx="64" cy="64" r="54" fill="url(#g11_ambient)"/>
+
+  <!-- Main Gemstone Shapes -->
+  <g>
+    
+      <!-- Tall Obelisk Crystal Spire with Lunar Ring -->
+      <ellipse cx="64" cy="66" rx="46" ry="14" fill="none" stroke="#cffafe" stroke-width="2" stroke-dasharray="4,4" filter="url(#f11_glow)"/>
+      <!-- Main Spire -->
+      <polygon points="64,14 82,44 76,108 52,108 46,44" fill="url(#g11_main)" stroke="#cffafe" stroke-width="2.5"/>
+      <polygon points="64,14 82,44 64,108 64,14" fill="#06b6d4"/>
+      <polygon points="64,14 46,44 64,108 64,14" fill="#0891b2"/>
+      <!-- Flanking Side Shards -->
+      <polygon points="42,54 50,74 46,102 34,102 32,74" fill="url(#g11_sub)" stroke="#cffafe" stroke-width="1.5"/>
+      <polygon points="86,54 96,74 94,102 82,102 78,74" fill="url(#g11_sub)" stroke="#cffafe" stroke-width="1.5"/>
+      <ellipse cx="64" cy="24" rx="4" ry="8" fill="#ffffff" filter="url(#f11_glow)"/>
+    
+  </g>
+</svg>

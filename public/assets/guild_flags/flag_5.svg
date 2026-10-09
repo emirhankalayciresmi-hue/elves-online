@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="flagBg5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c4a6e" />
+      <stop offset="50%" stop-color="#082f49" />
+      <stop offset="100%" stop-color="#031521" />
+    </linearGradient>
+    <linearGradient id="iceTrim5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bae6fd" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+  <!-- Flag Shield Shape -->
+  <path d="M10,10 L90,10 L90,75 C90,95 50,115 50,115 C50,115 10,95 10,75 Z" fill="url(#flagBg5)" stroke="url(#iceTrim5)" stroke-width="3" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.6))"/>
+  <path d="M16,16 L84,16 L84,72 C84,88 50,105 50,105 C50,105 16,88 16,72 Z" fill="none" stroke="url(#iceTrim5)" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+  
+  <!-- Emblem: Howling Frost Wolf Head -->
+  <g transform="translate(50,55) scale(0.72)" fill="url(#iceTrim5)">
+    <!-- Ears -->
+    <polygon points="-18,-35 -8,-15 -25,-12" />
+    <polygon points="18,-35 8,-15 25,-12" />
+    <!-- Head Base -->
+    <path d="M-22,-12 C-28,5 -20,20 -15,30 L0,38 L15,30 C20,20 28,5 22,-12 Z" />
+    <!-- Snout & Nose -->
+    <polygon points="-8,10 8,10 0,26" fill="#0369a1" />
+    <!-- Eyes -->
+    <polygon points="-12,-4 -5,-2 -10,2" fill="#e0f2fe" />
+    <polygon points="12,-4 5,-2 10,2" fill="#e0f2fe" />
+    <!-- Mane Furs -->
+    <path d="M-22,0 L-32,10 L-20,15 L-28,25 L-12,28" stroke="#7dd3fc" stroke-width="2" fill="none"/>
+    <path d="M22,0 L32,10 L20,15 L28,25 L12,28" stroke="#7dd3fc" stroke-width="2" fill="none"/>
+  </g>
+  <circle cx="50" cy="10" r="3" fill="#e0f2fe" />
+</svg>

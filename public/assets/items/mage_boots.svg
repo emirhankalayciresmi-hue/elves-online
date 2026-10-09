@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bg_mage" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#132048"/>
+      <stop offset="85%" stop-color="#061026"/>
+      <stop offset="100%" stop-color="#020406"/>
+    </radialGradient>
+    
+    <!-- Item Surface Gradient -->
+    <linearGradient id="grad_mage" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#061026"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark Ornate Background Canvas -->
+  <rect width="256" height="256" rx="20" fill="url(#bg_mage)"/>
+  
+  <!-- Outer Ornate Elven Gold Border -->
+  <rect x="8" y="8" width="240" height="240" rx="14" fill="none" stroke="#c084fc" stroke-width="2" opacity="0.6"/>
+  <rect x="14" y="14" width="228" height="228" rx="10" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Corner Filigree Diamonds -->
+  <polygon points="14,14 20,8 26,14 20,20" fill="#c084fc"/>
+  <polygon points="242,14 248,8 236,8 242,20" fill="#c084fc"/>
+  <polygon points="14,242 20,248 26,242 20,236" fill="#c084fc"/>
+  <polygon points="242,242 248,248 236,248 242,236" fill="#c084fc"/>
+
+  <!-- Ambient Magic Aura -->
+  <circle cx="128" cy="128" r="80" fill="#2563eb" opacity="0.25" filter="url(#glow)"/>
+
+  <!-- Background Arcane Runic Ring -->
+  <circle cx="128" cy="128" r="88" fill="none" stroke="#c084fc" stroke-width="1" stroke-dasharray="6,8" opacity="0.25"/>
+
+  <!-- Main Slot Illustrated Artwork -->
+  
+      <!-- Leg Greave Armor -->
+      <path d="M94 48 L162 48 L152 145 L104 145 Z" fill="url(#grad_mage)" stroke="#c084fc" stroke-width="2.5"/>
+      <!-- Knee Guard -->
+      <polygon points="128,34 148,50 128,66 108,50" fill="#c084fc" stroke="#000000" stroke-width="1"/>
+      <circle cx="128" cy="50" r="4" fill="#38bdf8" filter="url(#glow)"/>
+      <!-- Foot Plate & Ankle -->
+      <path d="M104 145 L148 145 L156 170 L188 195 L188 214 L88 214 L88 180 L104 145 Z" 
+            fill="url(#grad_mage)" stroke="#c084fc" stroke-width="2.5"/>
+      <!-- Spur / Winged Ankle Accent -->
+      <path d="M84 175 L62 165 L76 188 Z" fill="#c084fc" stroke="#818cf8" stroke-width="1.5"/>
+      <!-- Tread/Sole -->
+      <rect x="86" y="212" width="104" height="8" rx="2" fill="#0b0e14" stroke="#c084fc" stroke-width="1.5"/>
+    
+
+  <!-- Item Level & Set Badge -->
+  <g transform="translate(18, 222)">
+    <rect width="64" height="18" rx="4" fill="#000000" opacity="0.75" stroke="#c084fc" stroke-width="1"/>
+    <text x="32" y="13" font-family="'Cinzel', sans-serif" font-size="10" font-weight="bold" fill="#c084fc" text-anchor="middle">Lv. 1-10</text>
+  </g>
+</svg>

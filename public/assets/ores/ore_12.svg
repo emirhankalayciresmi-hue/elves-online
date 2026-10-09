@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Radial Back Glow -->
+    <radialGradient id="g12_ambient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fbbf24" stop-opacity="0.45"/>
+      <stop offset="65%" stop-color="#fbbf24" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Main Gradient -->
+    <linearGradient id="g12_main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="45%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- Sub Gradient -->
+    <linearGradient id="g12_sub" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="60%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="f12_glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Aura -->
+  <circle cx="64" cy="64" r="54" fill="url(#g12_ambient)"/>
+
+  <!-- Main Gemstone Shapes -->
+  <g>
+    
+      <!-- Glowing Amber Drop with Ancient Leaf Inside -->
+      <path d="M64,16 C64,16 98,62 98,82 A34,34 0 0,1 30,82 C30,62 64,16 64,16 Z" fill="url(#g12_main)" stroke="#fef08a" stroke-width="2.5" filter="url(#f12_glow)"/>
+      <path d="M64,28 C64,28 90,66 90,82 A26,26 0 0,1 38,82 C38,66 64,28 64,28 Z" fill="#b45309" opacity="0.4"/>
+      <!-- Ancient Preserved Leaf -->
+      <path d="M64,48 C72,56 74,74 64,84 C54,74 56,56 64,48 Z" fill="#84cc16" opacity="0.85"/>
+      <path d="M64,50 L64,82 M64,60 L70,56 M64,66 L71,63 M64,72 L70,70 M64,60 L58,56 M64,66 L57,63 M64,72 L58,70" stroke="#fef08a" stroke-width="1.2"/>
+      <!-- Glow highlight -->
+      <ellipse cx="52" cy="54" rx="6" ry="14" fill="#ffffff" opacity="0.5" transform="rotate(-25 52 54)"/>
+    
+  </g>
+</svg>

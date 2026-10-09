@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Radial Back Glow -->
+    <radialGradient id="g19_ambient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0.45"/>
+      <stop offset="65%" stop-color="#0284c7" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Main Gradient -->
+    <linearGradient id="g19_main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="45%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Sub Gradient -->
+    <linearGradient id="g19_sub" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="60%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="f19_glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Aura -->
+  <circle cx="64" cy="64" r="54" fill="url(#g19_ambient)"/>
+
+  <!-- Main Gemstone Shapes -->
+  <g>
+    
+      <!-- Dark Meteoric Iron with Glowing Blue Runes -->
+      <polygon points="30,28 98,22 108,82 78,104 22,96 16,46" fill="url(#g19_main)" stroke="#38bdf8" stroke-width="2.5" filter="url(#f19_glow)"/>
+      <polygon points="30,28 64,36 78,104 22,96" fill="#0f172a" opacity="0.6"/>
+      <polygon points="98,22 108,82 78,104 64,36" fill="#334155"/>
+      <!-- Carved Glowing Runes -->
+      <path d="M42,42 L52,56 L42,70 M52,56 L62,56" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" filter="url(#f19_glow)"/>
+      <path d="M74,40 L84,54 L74,68 M84,54 L94,54" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" filter="url(#f19_glow)"/>
+      <circle cx="56" cy="84" r="3" fill="#38bdf8" filter="url(#f19_glow)"/>
+      <circle cx="80" cy="82" r="3" fill="#38bdf8" filter="url(#f19_glow)"/>
+    
+  </g>
+</svg>

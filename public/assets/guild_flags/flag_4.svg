@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="flagBg4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#450a0a" />
+      <stop offset="50%" stop-color="#2a0808" />
+      <stop offset="100%" stop-color="#0a0202" />
+    </linearGradient>
+    <linearGradient id="fireTrim4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="30%" stop-color="#f97316" />
+      <stop offset="70%" stop-color="#ef4444" />
+      <stop offset="100%" stop-color="#b91c1c" />
+    </linearGradient>
+  </defs>
+  <!-- Flag Shield Shape -->
+  <path d="M10,10 L90,10 L90,75 C90,95 50,115 50,115 C50,115 10,95 10,75 Z" fill="url(#flagBg4)" stroke="url(#fireTrim4)" stroke-width="3" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.6))"/>
+  <path d="M16,16 L84,16 L84,72 C84,88 50,105 50,105 C50,105 16,88 16,72 Z" fill="none" stroke="url(#fireTrim4)" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+  
+  <!-- Emblem: Phoenix Wings & Fire Tail -->
+  <g transform="translate(50,56) scale(0.72)" fill="url(#fireTrim4)">
+    <!-- Phoenix Body -->
+    <path d="M0,-24 C6,-16 6,-5 0,10 C-6,-5 -6,-16 0,-24 Z" fill="#fde047" />
+    <!-- Phoenix Head & Beak -->
+    <circle cx="0" cy="-26" r="4.5" fill="#fef08a" />
+    <polygon points="0,-32 3,-27 -3,-27" fill="#ea580c" />
+    <!-- Wings Extended -->
+    <path d="M4,-10 C18,-35 45,-25 38,5 C30,-5 15,2 4,5 Z" />
+    <path d="M-4,-10 C-18,-35 -45,-25 -38,5 C-30,-5 -15,2 -4,5 Z" />
+    <!-- Flame Plumes -->
+    <path d="M6,6 C16,18 25,25 22,35 C15,28 10,20 3,12 Z" fill="#f97316" />
+    <path d="M-6,6 C-16,18 -25,25 -22,35 C-15,28 -10,20 -3,12 Z" fill="#f97316" />
+    <path d="M0,10 C4,22 6,36 0,42 C-6,36 -4,22 0,10 Z" fill="#ef4444" />
+  </g>
+  <circle cx="50" cy="10" r="3" fill="#fde047" />
+</svg>

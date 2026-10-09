@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Radial Back Glow -->
+    <radialGradient id="g7_ambient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.45"/>
+      <stop offset="65%" stop-color="#10b981" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Main Gradient -->
+    <linearGradient id="g7_main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="45%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+
+    <!-- Sub Gradient -->
+    <linearGradient id="g7_sub" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="60%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="f7_glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Aura -->
+  <circle cx="64" cy="64" r="54" fill="url(#g7_ambient)"/>
+
+  <!-- Main Gemstone Shapes -->
+  <g>
+    
+      <!-- Royal Octagonal Step-Cut Emerald -->
+      <polygon points="40,24 88,24 108,44 108,84 88,104 40,104 20,84 20,44" fill="url(#g7_main)" stroke="#6ee7b7" stroke-width="3" filter="url(#f7_glow)"/>
+      <!-- Inner Step Table -->
+      <polygon points="48,36 80,36 94,50 94,78 80,92 48,92 34,78 34,50" fill="#047857" stroke="#6ee7b7" stroke-width="1.5"/>
+      <polygon points="54,44 74,44 84,54 84,74 74,84 54,84 44,74 44,54" fill="#10b981"/>
+      <!-- Facet Light Lines -->
+      <line x1="40" y1="24" x2="48" y2="36" stroke="#6ee7b7" stroke-width="1.5"/>
+      <line x1="88" y1="24" x2="80" y2="36" stroke="#6ee7b7" stroke-width="1.5"/>
+      <line x1="108" y1="44" x2="94" y2="50" stroke="#6ee7b7" stroke-width="1.5"/>
+      <line x1="108" y1="84" x2="94" y2="78" stroke="#6ee7b7" stroke-width="1.5"/>
+      <line x1="88" y1="104" x2="80" y2="92" stroke="#6ee7b7" stroke-width="1.5"/>
+      <line x1="40" y1="104" x2="48" y2="92" stroke="#6ee7b7" stroke-width="1.5"/>
+      <line x1="20" y1="84" x2="34" y2="78" stroke="#6ee7b7" stroke-width="1.5"/>
+      <line x1="20" y1="44" x2="34" y2="50" stroke="#6ee7b7" stroke-width="1.5"/>
+      <!-- Top Specular Glint -->
+      <ellipse cx="64" cy="40" rx="14" ry="4" fill="#ffffff" opacity="0.6"/>
+    
+  </g>
+</svg>

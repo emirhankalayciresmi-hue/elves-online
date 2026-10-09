@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bg_warrior" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#3b0d14"/>
+      <stop offset="85%" stop-color="#1b0507"/>
+      <stop offset="100%" stop-color="#020406"/>
+    </radialGradient>
+    
+    <!-- Item Surface Gradient -->
+    <linearGradient id="grad_warrior" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e"/>
+      <stop offset="50%" stop-color="#e11d48"/>
+      <stop offset="100%" stop-color="#1b0507"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark Ornate Background Canvas -->
+  <rect width="256" height="256" rx="20" fill="url(#bg_warrior)"/>
+  
+  <!-- Outer Ornate Elven Gold Border -->
+  <rect x="8" y="8" width="240" height="240" rx="14" fill="none" stroke="#fbbf24" stroke-width="2" opacity="0.6"/>
+  <rect x="14" y="14" width="228" height="228" rx="10" fill="none" stroke="#f43f5e" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Corner Filigree Diamonds -->
+  <polygon points="14,14 20,8 26,14 20,20" fill="#fbbf24"/>
+  <polygon points="242,14 248,8 236,8 242,20" fill="#fbbf24"/>
+  <polygon points="14,242 20,248 26,242 20,236" fill="#fbbf24"/>
+  <polygon points="242,242 248,248 236,248 242,236" fill="#fbbf24"/>
+
+  <!-- Ambient Magic Aura -->
+  <circle cx="128" cy="128" r="80" fill="#be123c" opacity="0.25" filter="url(#glow)"/>
+
+  <!-- Background Arcane Runic Ring -->
+  <circle cx="128" cy="128" r="88" fill="none" stroke="#fbbf24" stroke-width="1" stroke-dasharray="6,8" opacity="0.25"/>
+
+  <!-- Main Slot Illustrated Artwork -->
+  
+      <!-- Helmet Crest -->
+      <path d="M128 36 L118 64 L138 64 Z" fill="#fbbf24" opacity="0.9"/>
+      <path d="M128 28 L124 50 L132 50 Z" fill="#ffffff" opacity="0.8"/>
+      <!-- Main Helmet Dome -->
+      <path d="M72 130 C72 74 94 58 128 58 C162 58 184 74 184 130 C184 165 170 196 156 208 L142 195 L114 195 L100 208 C86 196 72 165 72 130 Z" 
+            fill="url(#grad_warrior)" stroke="#fbbf24" stroke-width="3"/>
+      <!-- Cheeks & Visor Plates -->
+      <path d="M85 125 L105 130 L105 170 L82 155 Z" fill="#e11d48" stroke="#f43f5e" stroke-width="1.5"/>
+      <path d="M171 125 L151 130 L151 170 L174 155 Z" fill="#e11d48" stroke="#f43f5e" stroke-width="1.5"/>
+      <!-- Eye Slit -->
+      <polygon points="102,122 120,126 128,124 136,126 154,122 148,132 128,136 108,132" fill="#05070a"/>
+      <ellipse cx="116" cy="127" rx="6" ry="2" fill="#f43f5e" filter="url(#glow)"/>
+      <ellipse cx="140" cy="127" rx="6" ry="2" fill="#f43f5e" filter="url(#glow)"/>
+      <!-- Forehead Gem -->
+      <polygon points="128,74 136,88 128,102 120,88" fill="#fbbf24" stroke="#ffffff" stroke-width="1"/>
+      <circle cx="128" cy="88" r="4" fill="#f43f5e" filter="url(#glow)"/>
+    
+
+  <!-- Item Level & Set Badge -->
+  <g transform="translate(18, 222)">
+    <rect width="64" height="18" rx="4" fill="#000000" opacity="0.75" stroke="#fbbf24" stroke-width="1"/>
+    <text x="32" y="13" font-family="'Cinzel', sans-serif" font-size="10" font-weight="bold" fill="#fbbf24" text-anchor="middle">Lv. 1-10</text>
+  </g>
+</svg>

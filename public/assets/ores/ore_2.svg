@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Radial Back Glow -->
+    <radialGradient id="g2_ambient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.45"/>
+      <stop offset="65%" stop-color="#818cf8" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Main Gradient -->
+    <linearGradient id="g2_main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="45%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+
+    <!-- Sub Gradient -->
+    <linearGradient id="g2_sub" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="60%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="f2_glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Aura -->
+  <circle cx="64" cy="64" r="54" fill="url(#g2_ambient)"/>
+
+  <!-- Main Gemstone Shapes -->
+  <g>
+    
+      <!-- 8-Point Star Cluster -->
+      <polygon points="64,16 74,48 108,48 80,68 90,102 64,82 38,102 48,68 20,48 54,48" fill="url(#g2_main)" stroke="#fef08a" stroke-width="2.5" filter="url(#f2_glow)"/>
+      <polygon points="64,26 71,50 96,50 76,66 84,92 64,76 44,92 52,66 32,50 57,50" fill="#fbbf24"/>
+      <polygon points="64,36 76,64 64,80 52,64" fill="#fef08a"/>
+      <circle cx="64" cy="64" r="6" fill="#ffffff" filter="url(#f2_glow)"/>
+      <!-- Small Sparkles -->
+      <path d="M26,30 L28,22 L30,30 L38,32 L30,34 L28,42 L26,34 L18,32 Z" fill="#fef08a"/>
+      <path d="M102,96 L103,90 L105,96 L111,97 L105,99 L103,105 L102,99 L96,97 Z" fill="#fef08a"/>
+    
+  </g>
+</svg>

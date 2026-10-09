@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="flagBg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="50%" stop-color="#022c22" />
+      <stop offset="100%" stop-color="#011611" />
+    </linearGradient>
+    <linearGradient id="goldTrim2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ee7b7" />
+      <stop offset="50%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+  </defs>
+  <!-- Flag Shield Shape -->
+  <path d="M10,10 L90,10 L90,75 C90,95 50,115 50,115 C50,115 10,95 10,75 Z" fill="url(#flagBg2)" stroke="url(#goldTrim2)" stroke-width="3" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.6))"/>
+  <path d="M16,16 L84,16 L84,72 C84,88 50,105 50,105 C50,105 16,88 16,72 Z" fill="none" stroke="url(#goldTrim2)" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+  
+  <!-- Emblem: Sacred Holy Oak Tree -->
+  <g transform="translate(50,55) scale(0.75)" fill="url(#goldTrim2)">
+    <!-- Tree Trunk -->
+    <path d="M-6,28 C-3,10 -8,-5 0,-15 C8,-5 3,10 6,28 C15,32 20,35 22,38 L-22,38 C-20,35 -15,32 -6,28 Z" />
+    <!-- Foliage Leaves / Canopy -->
+    <circle cx="0" cy="-22" r="14" fill="#34d399" />
+    <circle cx="-16" cy="-14" r="11" fill="#10b981" />
+    <circle cx="16" cy="-14" r="11" fill="#10b981" />
+    <circle cx="-12" cy="0" r="10" fill="#059669" />
+    <circle cx="12" cy="0" r="10" fill="#059669" />
+    <circle cx="0" cy="-8" r="12" fill="#6ee7b7" opacity="0.8" />
+    <!-- Center Emerald Core -->
+    <polygon points="0,-12 6,-4 0,4 -6,-4" fill="#a7f3d0" />
+  </g>
+  <circle cx="50" cy="10" r="3" fill="#a7f3d0" />
+</svg>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="flagBg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="silverTrim3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0e7ff" />
+      <stop offset="50%" stop-color="#818cf8" />
+      <stop offset="100%" stop-color="#4338ca" />
+    </linearGradient>
+  </defs>
+  <!-- Flag Shield Shape -->
+  <path d="M10,10 L90,10 L90,75 C90,95 50,115 50,115 C50,115 10,95 10,75 Z" fill="url(#flagBg3)" stroke="url(#silverTrim3)" stroke-width="3" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.6))"/>
+  <path d="M16,16 L84,16 L84,72 C84,88 50,105 50,105 C50,105 16,88 16,72 Z" fill="none" stroke="url(#silverTrim3)" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+  
+  <!-- Emblem: Crescent Moon and 8-Point Night Star -->
+  <g transform="translate(50,55) scale(0.8)">
+    <!-- Crescent Moon -->
+    <path d="M-8,-28 C15,-28 30,-10 30,12 C30,28 18,38 2,40 C14,34 20,24 20,12 C20,-4 8,-20 -8,-24 Z" fill="url(#silverTrim3)" />
+    <!-- 8-Point Elven Star -->
+    <g transform="translate(-6,6) scale(0.7)" fill="#c7d2fe">
+      <polygon points="0,-26 5,-8 22,-8 8,2 14,20 0,9 -14,20 -8,2 -22,-8 -5,-8" />
+      <circle cx="0" cy="4" r="3" fill="#ffffff" />
+    </g>
+  </g>
+  <circle cx="50" cy="10" r="3" fill="#e0e7ff" />
+</svg>

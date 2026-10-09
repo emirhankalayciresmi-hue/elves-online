@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Radial Back Glow -->
+    <radialGradient id="g14_ambient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d946ef" stop-opacity="0.45"/>
+      <stop offset="65%" stop-color="#d946ef" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Main Gradient -->
+    <linearGradient id="g14_main" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbcfe8"/>
+      <stop offset="45%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+
+    <!-- Sub Gradient -->
+    <linearGradient id="g14_sub" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fbcfe8"/>
+      <stop offset="60%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="f14_glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Aura -->
+  <circle cx="64" cy="64" r="54" fill="url(#g14_ambient)"/>
+
+  <!-- Main Gemstone Shapes -->
+  <g>
+    
+      <!-- Clustered Magical Crystal Form -->
+      <polygon points="64,18 84,46 76,104 52,104 44,46" fill="url(#g14_main)" stroke="#fbcfe8" stroke-width="2.5" filter="url(#f14_glow)"/>
+      <polygon points="64,18 84,46 64,104" fill="#ec4899"/>
+      <polygon points="64,18 44,46 64,104" fill="#3b82f6"/>
+      <!-- Left Crystal -->
+      <polygon points="38,42 50,62 46,96 28,96 24,66" fill="url(#g14_sub)" stroke="#fbcfe8" stroke-width="2"/>
+      <polygon points="38,42 50,62 36,96" fill="#ec4899" opacity="0.8"/>
+      <!-- Right Crystal -->
+      <polygon points="90,42 104,66 100,96 82,96 78,62" fill="url(#g14_sub)" stroke="#fbcfe8" stroke-width="2"/>
+      <polygon points="90,42 104,66 92,96" fill="#3b82f6" opacity="0.8"/>
+      <!-- Ground Matrix Rock -->
+      <polygon points="18,94 110,94 102,112 26,112" fill="#0f172a" stroke="#3b82f6" stroke-width="1.5"/>
+      <!-- Sparkling Stars -->
+      <circle cx="64" cy="30" r="3" fill="#ffffff" filter="url(#f14_glow)"/>
+      <circle cx="34" cy="52" r="2" fill="#ffffff"/>
+      <circle cx="94" cy="52" r="2" fill="#ffffff"/>
+    
+  </g>
+</svg>

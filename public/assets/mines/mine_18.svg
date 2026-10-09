@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="400" height="240">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg_18" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#172554"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+
+    <!-- Cavern Light Beam -->
+    <linearGradient id="beam_18" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#c084fc" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <!-- Crystal Glow Filter -->
+    <filter id="glow_18" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <radialGradient id="aura_18" cx="50%" cy="60%" r="50%">
+      <stop offset="0%" stop-color="#c084fc" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#c084fc" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Sky / Deep Cavern Ceiling -->
+  <rect width="400" height="240" fill="url(#bg_18)"/>
+
+  <!-- Light Beam from Shaft -->
+  <polygon points="170,0 230,0 310,240 90,240" fill="url(#beam_18)"/>
+
+  <!-- Distant Cavern Walls -->
+  <path d="M0,160 L60,130 L130,150 L200,120 L280,150 L340,130 L400,160 L400,240 L0,240 Z" fill="#030712" opacity="0.7"/>
+
+  <!-- Hanging Stalactites from Ceiling -->
+  <polygon points="20,0 35,45 50,0" fill="#0b0f19"/>
+  <polygon points="70,0 90,75 110,0" fill="#0f172a"/>
+  <polygon points="140,0 155,50 170,0" fill="#0b0f19"/>
+  <polygon points="260,0 280,85 300,0" fill="#0f172a"/>
+  <polygon points="330,0 350,60 370,0" fill="#0b0f19"/>
+
+  <!-- Glowing Veins on Stalactites -->
+  <line x1="85" y1="10" x2="90" y2="70" stroke="#f3e8ff" stroke-width="2" filter="url(#glow_18)"/>
+  <line x1="275" y1="15" x2="280" y2="80" stroke="#f3e8ff" stroke-width="2" filter="url(#glow_18)"/>
+
+  <!-- Central Subterranean Aura -->
+  <ellipse cx="200" cy="160" rx="140" ry="70" fill="url(#aura_18)"/>
+
+  <!-- Rocky Foreground Cliffs -->
+  <path d="M-10,240 L-10,180 L40,170 L90,195 L140,185 L180,210 L220,185 L280,200 L340,175 L410,185 L410,240 Z" fill="#030712"/>
+
+  <!-- Giant Glowing Crystal Cluster (Main Focal Point) -->
+  <g filter="url(#glow_18)">
+    <!-- Center Giant Crystal Spire -->
+    <polygon points="200,80 216,130 208,205 192,205 184,130" fill="#f3e8ff" stroke="#ffffff" stroke-width="1.5"/>
+    <polygon points="200,80 216,130 200,205" fill="#818cf8"/>
+    <!-- Left Spire -->
+    <polygon points="172,110 186,145 180,205 166,205 158,145" fill="#c084fc" stroke="#ffffff" stroke-width="1"/>
+    <!-- Right Spire -->
+    <polygon points="228,110 242,145 234,205 220,205 214,145" fill="#f3e8ff" stroke="#ffffff" stroke-width="1"/>
+    <!-- Outer Shards -->
+    <polygon points="148,140 160,165 154,205 142,205" fill="#818cf8"/>
+    <polygon points="252,140 264,165 258,205 246,205" fill="#c084fc"/>
+  </g>
+
+  <!-- Left Mineral Bed -->
+  <g filter="url(#glow_18)">
+    <polygon points="60,150 70,175 66,200 54,200 50,175" fill="#f3e8ff"/>
+    <polygon points="76,160 84,180 80,200 72,200" fill="#c084fc"/>
+    <polygon points="44,165 52,185 48,200 40,200" fill="#818cf8"/>
+  </g>
+
+  <!-- Right Mineral Bed -->
+  <g filter="url(#glow_18)">
+    <polygon points="340,150 350,175 346,200 334,200 330,175" fill="#f3e8ff"/>
+    <polygon points="324,160 332,180 328,200 320,200" fill="#c084fc"/>
+    <polygon points="356,165 364,185 360,200 352,200" fill="#818cf8"/>
+  </g>
+
+  <!-- Bioluminescent Spores / Starlight Motes -->
+  <circle cx="180" cy="95" r="2.5" fill="#ffffff" filter="url(#glow_18)"/>
+  <circle cx="220" cy="105" r="2" fill="#ffffff" filter="url(#glow_18)"/>
+  <circle cx="150" cy="130" r="1.8" fill="#f3e8ff"/>
+  <circle cx="260" cy="125" r="2.2" fill="#f3e8ff"/>
+  <circle cx="110" cy="160" r="1.5" fill="#ffffff"/>
+  <circle cx="290" cy="160" r="1.8" fill="#ffffff"/>
+  <circle cx="200" cy="65" r="3" fill="#ffffff" filter="url(#glow_18)"/>
+
+  <!-- Ornate Vignette Border Overlay -->
+  <rect x="2" y="2" width="396" height="236" rx="6" fill="none" stroke="#c084fc" stroke-opacity="0.35" stroke-width="2"/>
+  <rect x="6" y="6" width="388" height="228" rx="4" fill="none" stroke="#d97706" stroke-opacity="0.25" stroke-width="1"/>
+</svg>
