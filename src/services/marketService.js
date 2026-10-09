@@ -2,6 +2,7 @@
 // Pazar İşlemleri: Eşya Listeleme (20 Slot), Eşya Geri Alma, Satın Alma, Teklif Verme, Teklif Kabul/Ret
 
 import { MAX_STALL_SLOTS, getLatestBenchmarkPrice } from '../config/marketData';
+import { supabase } from './supabaseClient';
 
 /**
  * Envanterden 20 slotluk tezgaha eşya yerleştirme
@@ -368,4 +369,90 @@ export function declineOfferService(playerStall, stallItemId, offerIndex, allSta
     stalls: updatedAllStalls,
     message: `[${removedOffer?.buyerName}] tarafından yapılan teklif reddedildi.`,
   };
+}
+
+/**
+ * Supabase'den aktif oyuncu pazarlarını çeker
+ */
+export async function fetchCloudMarketStalls() {
+  try {
+    const { data, error } = await supabase
+      .from('market_stalls')
+      .select('*')
+      .eq('is_open', true)
+      .order('updated_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.warn('Cloud market fetch warning:', error.message);
+      return [];
+    }
+
+    return (data || []).map((row) => ({
+      id: row.id,
+      sellerName: row.seller_name,
+      sellerKingdom: row.seller_kingdom || '',
+      stallTitle: row.stall_title,
+      motto: row.motto || '',
+      isOpen: row.is_open,
+      createdAt: row.created_at,
+      items: Array.isArray(row.items) ? row.items : [],
+    }));
+  } catch (err) {
+    console.error('Cloud market fetch exception:', err);
+    return [];
+  }
+}
+
+/**
+ * Oyuncu tezgahını Supabase bulutuna senkronize eder
+ */
+export async function syncPlayerStallToCloud(playerStall, sellerKingdom = '') {
+  if (!playerStall || !playerStall.sellerName) return;
+  try {
+    const payload = {
+      seller_name: playerStall.sellerName,
+      seller_kingdom: sellerKingdom,
+      stall_title: playerStall.stallTitle || `${playerStall.sellerName} Pazarı`,
+      motto: playerStall.motto || '',
+      items: playerStall.items || [],
+      is_open: playerStall.isOpen !== false,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase
+      .from('market_stalls')
+      .upsert(payload, { onConflict: 'seller_name' });
+
+    if (error) {
+      console.warn('Stall sync to cloud warning:', error.message);
+    }
+  } catch (err) {
+    console.error('Stall sync exception:', err);
+  }
+}
+
+/**
+ * Pazar tezgahları realtime dinleyicisi
+ */
+export function subscribeToRealtimeMarket(onUpdate) {
+  try {
+    const channel = supabase
+      .channel('market_realtime_channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'market_stalls' },
+        () => {
+          onUpdate();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  } catch (err) {
+    console.error('Market realtime subscription error:', err);
+    return () => {};
+  }
 }

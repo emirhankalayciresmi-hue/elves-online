@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { RotateCcw, Image, Smartphone, Monitor, ShieldAlert, Check, Volume2, UserCheck, Settings as SettingsIcon } from 'lucide-react';
+import { RotateCcw, Image, Smartphone, Monitor, ShieldAlert, Check, Volume2, UserCheck, Settings as SettingsIcon, Globe } from 'lucide-react';
 import OrnateFrame from '../../components/OrnateFrame';
 import SubmenuBar from '../../components/SubmenuBar';
 import ElvenButton from '../../components/ElvenButton';
 import { ALL_MENUS } from '../../config/gameData';
 
-export default function SettingsTab({ layoutMode, onChangeLayoutMode, onResetPlayer, player }) {
+export default function SettingsTab({ layoutMode, onChangeLayoutMode, onResetPlayer, player, onOpenPortal }) {
   const [activeSubmenu, setActiveSubmenu] = useState('general');
   const [bgMusic, setBgMusic] = useState(false);
   const [soundEffects, setSoundEffects] = useState(true);
@@ -133,6 +133,30 @@ export default function SettingsTab({ layoutMode, onChangeLayoutMode, onResetPla
               <p>Oluşturulma: <span className="text-slate-400">{new Date(player?.createdAt).toLocaleDateString()}</span></p>
             </div>
           </OrnateFrame>
+
+          {/* Web Portal Link */}
+          {onOpenPortal && (
+            <OrnateFrame className="p-3.5 space-y-2 border-amber-500/30">
+              <div className="flex items-center gap-2 text-amber-300 font-cinzel text-xs font-semibold">
+                <Globe className="w-4 h-4 text-amber-400" />
+                <span>Elves Online Web Portalı</span>
+              </div>
+              <p className="text-xs text-slate-300/80 font-cormorant">
+                Rehberi okumak, canlı sunucu sıralamasını görmek veya yapımcı bilgilerini incelemek için ana portala dönün.
+              </p>
+              <div className="pt-1">
+                <ElvenButton
+                  variant="secondary"
+                  size="sm"
+                  onClick={onOpenPortal}
+                  icon={Globe}
+                  fullWidth
+                >
+                  Portala & Ana Sayfaya Dön
+                </ElvenButton>
+              </div>
+            </OrnateFrame>
+          )}
 
           {/* Reset Character */}
           <OrnateFrame className="p-3.5 space-y-2 border-red-500/30">
