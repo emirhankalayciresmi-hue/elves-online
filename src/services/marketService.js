@@ -456,4 +456,3 @@ export function subscribeToRealtimeMarket(onUpdate) {
     return () => {};
   }
 }
-
