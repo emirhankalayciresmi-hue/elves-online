@@ -25,13 +25,14 @@ export default function MineView({
   const [currentTime, setCurrentTime] = useState(Date.now());
   const isPC = layoutMode === 'pc';
 
-  // 1 saniyelik sayaç
+  // 1 saniyelik sayaç (Yalnızca aktif maden kazısı varsa çalışır)
   useEffect(() => {
+    if (!player?.activeMine) return;
     const timer = setInterval(() => {
       setCurrentTime(Date.now());
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [player?.activeMine]);
 
   // Aktif Kazı Durumu
   const activeMine = player?.activeMine || null;

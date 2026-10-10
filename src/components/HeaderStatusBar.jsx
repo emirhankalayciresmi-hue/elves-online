@@ -5,12 +5,13 @@ import {
   Bell, BellOff, CheckCheck, Trash2, X, Swords, Pickaxe,
   Users, AlertCircle, Award, ChevronRight, FlaskConical, Plus, Globe
 } from 'lucide-react';
-import { ASSETS } from '../config/assets';
-import { DEFAULT_PLAYER_STATS } from '../config/gameData';
-import { getRequiredExp } from '../config/dungeonData';
-import { buyPotions, usePotion, setAutoPotionThreshold } from '../services/gameEngine';
+import { ASSETS } from '@/core/config/assets';
+import { DEFAULT_PLAYER_STATS } from '@/core/config/gameData';
+import { getRequiredExp } from '@/core/config/dungeonData';
+import { buyPotions, consumePotion, setAutoPotionThreshold } from '@/domain/gameEngine';
+import { storageManager, StorageKeys } from '@/core/storage/storageManager';
 
-const NOTIF_STORAGE_KEY = 'elves_rpg_notifications_list';
+const NOTIF_STORAGE_KEY = StorageKeys.NOTIFICATIONS;
 
 const INITIAL_NOTIFICATIONS = [
   {
@@ -41,18 +42,16 @@ export default function HeaderStatusBar({
   onUpdatePlayer,
   onOpenPortal,
 }) {
-  if (!player) return null;
-
   const isPC = layoutMode === 'pc';
-  const currentLevel = player.level || 1;
-  const currentExp = player.exp || 0;
+  const currentLevel = player?.level || 1;
+  const currentExp = player?.exp || 0;
   const maxExp = getRequiredExp(currentLevel);
   const expPercent = Math.min(100, Math.max(0, Math.round((currentExp / maxExp) * 100)));
 
-  const currentHp = player.hp ?? DEFAULT_PLAYER_STATS.hp;
-  const maxHp = player.maxHp ?? DEFAULT_PLAYER_STATS.maxHp;
-  const currentMana = player.mana ?? DEFAULT_PLAYER_STATS.mana;
-  const maxMana = player.maxMana ?? DEFAULT_PLAYER_STATS.maxMana;
+  const currentHp = player?.hp ?? DEFAULT_PLAYER_STATS.hp;
+  const maxHp = player?.maxHp ?? DEFAULT_PLAYER_STATS.maxHp;
+  const currentMana = player?.mana ?? DEFAULT_PLAYER_STATS.mana;
+  const maxMana = player?.maxMana ?? DEFAULT_PLAYER_STATS.maxMana;
   const hpPercent = Math.min(100, Math.max(0, Math.round((currentHp / maxHp) * 100)));
   const manaPercent = Math.min(100, Math.max(0, Math.round((currentMana / maxMana) * 100)));
 
@@ -91,10 +90,9 @@ export default function HeaderStatusBar({
 
   const [notifications, setNotifications] = useState(() => {
     try {
-      const saved = localStorage.getItem(NOTIF_STORAGE_KEY);
+      const saved = storageManager.getItem(NOTIF_STORAGE_KEY, null);
       if (!saved) return INITIAL_NOTIFICATIONS;
-      const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_NOTIFICATIONS;
+      return Array.isArray(saved) && saved.length > 0 ? saved : INITIAL_NOTIFICATIONS;
     } catch {
       return INITIAL_NOTIFICATIONS;
     }
@@ -102,11 +100,7 @@ export default function HeaderStatusBar({
 
   // Bildirimleri kaydet
   useEffect(() => {
-    try {
-      localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(notifications));
-    } catch (e) {
-      console.error('Notif save error:', e);
-    }
+    storageManager.setItem(NOTIF_STORAGE_KEY, notifications);
   }, [notifications]);
 
   // Dışarı tıklandığında menüyü kapat
@@ -204,6 +198,8 @@ export default function HeaderStatusBar({
         return AlertCircle;
     }
   };
+
+  if (!player) return null;
 
   return (
     <header className="sticky top-0 z-30 w-full bg-[#070d10]/95 border-b border-elven-gold/30 backdrop-blur-md shadow-lg">
@@ -620,7 +616,7 @@ export default function HeaderStatusBar({
                     disabled={(player.hpPotions ?? 0) <= 0 || currentHp >= maxHp}
                     onClick={() => {
                       if (onUpdatePlayer) {
-                        const updated = usePotion(player, 'hp');
+                        const updated = consumePotion(player, 'hp');
                         onUpdatePlayer(updated);
                         setPotionNotice({ type: 'success', text: '1 Adet Kırmızı İksir içildi (+300 HP)' });
                       }
@@ -649,7 +645,7 @@ export default function HeaderStatusBar({
                     disabled={(player.manaPotions ?? 0) <= 0 || currentMana >= maxMana}
                     onClick={() => {
                       if (onUpdatePlayer) {
-                        const updated = usePotion(player, 'mana');
+                        const updated = consumePotion(player, 'mana');
                         onUpdatePlayer(updated);
                         setPotionNotice({ type: 'success', text: '1 Adet Mavi İksir içildi (+300 MP)' });
                       }

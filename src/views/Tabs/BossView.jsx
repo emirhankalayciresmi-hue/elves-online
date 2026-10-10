@@ -33,16 +33,17 @@ export default function BossView({
     { id: 'world', label: 'Dünya Bossu' },
   ];
 
-  // 1-second interval for real-time countdown timer
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   // Cooldown calculation for active category (6 hours)
   const categoryCooldownEnd = (player?.bossCooldowns?.[activeSubmenu] || 0) + BOSS_COOLDOWN_MS;
   const remainingCooldownMs = Math.max(0, categoryCooldownEnd - currentTime);
   const isCategoryReady = remainingCooldownMs === 0;
+
+  // 1-second interval for real-time countdown timer (only runs when cooldown is ticking)
+  useEffect(() => {
+    if (isCategoryReady) return;
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [isCategoryReady]);
 
   // Format cooldown timer HH:MM:SS
   const formatCooldown = (ms) => {

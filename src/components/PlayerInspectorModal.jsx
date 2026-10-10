@@ -8,11 +8,11 @@ import {
   Swords, ShieldAlert, Gem, CircleDot, Hand, Footprints, Layers, Wind,
   Feather, Target, Flame, Snowflake, CloudLightning, Activity, AlertCircle, Check
 } from 'lucide-react';
-import OrnateFrame from './OrnateFrame';
-import ElvenButton from './ElvenButton';
-import { ItemTooltipCard } from './ItemTooltip';
-import { EQUIPMENT_SLOTS } from '../config/gameData';
-import { GUILD_FLAGS } from '../config/guildData';
+import OrnateFrame from '@/components/OrnateFrame';
+import ElvenButton from '@/components/ElvenButton';
+import { ItemTooltipCard } from '@/components/ItemTooltip';
+import { EQUIPMENT_SLOTS } from '@/core/config/gameData';
+import { GUILD_FLAGS } from '@/core/config/guildData';
 
 const SLOT_ICONS = {
   helmet: Crown,

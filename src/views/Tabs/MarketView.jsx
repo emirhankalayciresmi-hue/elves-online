@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   ShoppingBag,
   Store,
@@ -106,7 +106,10 @@ export default function MarketView({
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Supabase Cloud Pazar Senkronizasyonu
+  const lastMarketFetchRef = useRef(0);
+  const stallSyncTimeoutRef = useRef(null);
+
+  // Supabase Cloud Pazar Senkronizasyonu (Throttled)
   useEffect(() => {
     fetchCloudMarketStalls().then((cloudStalls) => {
       if (cloudStalls && cloudStalls.length > 0) {
@@ -116,6 +119,11 @@ export default function MarketView({
     });
 
     const unsubscribe = subscribeToRealtimeMarket(() => {
+      const now = Date.now();
+      // En az 5 saniye aralıkla sorgula (istek fırtınalarını engeller)
+      if (now - lastMarketFetchRef.current < 5000) return;
+      lastMarketFetchRef.current = now;
+
       fetchCloudMarketStalls().then((updated) => {
         if (updated) {
           setMarketStalls(updated);
@@ -129,11 +137,17 @@ export default function MarketView({
     };
   }, []);
 
-  // Oyuncu kendi tezgahını güncellediğinde buluta senkronize et
+  // Oyuncu kendi tezgahını güncellediğinde buluta senkronize et (Debounced 2.5s)
   useEffect(() => {
     if (playerStall && player?.name) {
-      syncPlayerStallToCloud(playerStall, player?.kingdomName);
+      if (stallSyncTimeoutRef.current) clearTimeout(stallSyncTimeoutRef.current);
+      stallSyncTimeoutRef.current = setTimeout(() => {
+        syncPlayerStallToCloud(playerStall, player?.kingdomName);
+      }, 2500);
     }
+    return () => {
+      if (stallSyncTimeoutRef.current) clearTimeout(stallSyncTimeoutRef.current);
+    };
   }, [playerStall, player?.name, player?.kingdomName]);
 
 

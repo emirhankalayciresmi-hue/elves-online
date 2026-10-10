@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Crown, Shield, Sword, ShieldAlert, Gem, CircleDot, Hand, Footprints,
   Layers, Wind, Feather, Sparkles, Shirt, Info, CheckCircle2
@@ -36,6 +36,29 @@ export default function InventoryTab({
   const [pinnedEquipped, setPinnedEquipped] = useState(null);
   const [hoveredEmptySlot, setHoveredEmptySlot] = useState(null);
   const [equipMousePos, setEquipMousePos] = useState({ x: 0, y: 0 });
+  const mousePosRef = useRef({ x: 0, y: 0 });
+  const rafIdRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    };
+  }, []);
+
+  const updateEquipMousePos = (e) => {
+    const x = e.clientX;
+    const y = e.clientY;
+    const dx = Math.abs(x - mousePosRef.current.x);
+    const dy = Math.abs(y - mousePosRef.current.y);
+    if (dx < 15 && dy < 15) return;
+
+    if (rafIdRef.current) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      mousePosRef.current = { x, y };
+      setEquipMousePos({ x, y });
+      rafIdRef.current = null;
+    });
+  };
 
   // Envanterden çıkıldığında (unmount) yeni eşya parlamaları söner
   useEffect(() => {
@@ -122,19 +145,17 @@ export default function InventoryTab({
                   <div
                     key={slot.id}
                     onMouseEnter={(e) => {
+                      mousePosRef.current = { x: e.clientX, y: e.clientY };
+                      setEquipMousePos({ x: e.clientX, y: e.clientY });
                       if (equippedItem) {
                         setHoveredEquipped(equippedItem);
                         setHoveredEmptySlot(null);
-                        setEquipMousePos({ x: e.clientX, y: e.clientY });
                       } else {
                         setHoveredEmptySlot(slot);
                         setHoveredEquipped(null);
-                        setEquipMousePos({ x: e.clientX, y: e.clientY });
                       }
                     }}
-                    onMouseMove={(e) => {
-                      setEquipMousePos({ x: e.clientX, y: e.clientY });
-                    }}
+                    onMouseMove={updateEquipMousePos}
                     onMouseLeave={() => {
                       setHoveredEquipped(null);
                       setHoveredEmptySlot(null);

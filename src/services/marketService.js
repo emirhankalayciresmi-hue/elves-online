@@ -1,8 +1,5 @@
-// src/services/marketService.js
-// Pazar İşlemleri: Eşya Listeleme (20 Slot), Eşya Geri Alma, Satın Alma, Teklif Verme, Teklif Kabul/Ret
-
-import { MAX_STALL_SLOTS, getLatestBenchmarkPrice } from '../config/marketData';
-import { supabase } from './supabaseClient';
+import { MAX_STALL_SLOTS } from '@/core/config/marketData';
+import { supabase } from '@/core/supabase/supabaseClient';
 
 /**
  * Envanterden 20 slotluk tezgaha eşya yerleştirme
@@ -456,3 +453,13 @@ export function subscribeToRealtimeMarket(onUpdate) {
     return () => {};
   }
 }
+
+export {
+  loadMarketStalls,
+  saveMarketStalls,
+  loadMarketHistory,
+  saveMarketHistory,
+  loadPlayerStall,
+  savePlayerStall,
+} from '@/core/config/marketData';
+

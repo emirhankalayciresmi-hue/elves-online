@@ -1,10 +1,10 @@
 // src/context/PlayerProfileContext.jsx
 // Evrensel Oyuncu Profil Yönetim Bağlamı (Context & Provider)
 
-import React, { createContext, useContext, useState, useRef, useCallback } from 'react';
-import { getPlayerProfile } from '../services/playerProfileService';
-import PlayerHoverCard from '../components/PlayerHoverCard';
-import PlayerInspectorModal from '../components/PlayerInspectorModal';
+import React, { createContext, useContext, useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { getPlayerProfile } from '@/services/playerProfileService';
+import PlayerHoverCard from '@/components/PlayerHoverCard';
+import PlayerInspectorModal from '@/components/PlayerInspectorModal';
 
 const PlayerProfileContext = createContext(null);
 
@@ -19,13 +19,18 @@ export function PlayerProfileProvider({
   const [inspectedProfile, setInspectedProfile] = useState(null);
   const [hoverState, setHoverState] = useState(null); // { profile, pos, isMobile }
   const hoverTimeoutRef = useRef(null);
+  const activePlayerRef = useRef(activePlayer);
+
+  useEffect(() => {
+    activePlayerRef.current = activePlayer;
+  }, [activePlayer]);
 
   // Hover kartını göster
   const openHoverCard = useCallback((playerInfo, pos, isMobile = false) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    const profile = getPlayerProfile(playerInfo, activePlayer);
+    const profile = getPlayerProfile(playerInfo, activePlayerRef.current);
     setHoverState({ profile, pos, isMobile });
-  }, [activePlayer]);
+  }, []);
 
   // Hover kartını gecikmeli veya anında gizle
   const closeHoverCard = useCallback((immediate = false) => {
@@ -48,24 +53,24 @@ export function PlayerProfileProvider({
   const openInspector = useCallback((playerInfo) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setHoverState(null);
-    const profile = getPlayerProfile(playerInfo, activePlayer);
+    const profile = getPlayerProfile(playerInfo, activePlayerRef.current);
     setInspectedProfile(profile);
-  }, [activePlayer]);
+  }, []);
 
   const closeInspector = useCallback(() => {
     setInspectedProfile(null);
   }, []);
 
+  const contextValue = useMemo(() => ({
+    openHoverCard,
+    closeHoverCard,
+    retainHoverCard,
+    openInspector,
+    closeInspector,
+  }), [openHoverCard, closeHoverCard, retainHoverCard, openInspector, closeInspector]);
+
   return (
-    <PlayerProfileContext.Provider
-      value={{
-        openHoverCard,
-        closeHoverCard,
-        retainHoverCard,
-        openInspector,
-        closeInspector,
-      }}
-    >
+    <PlayerProfileContext.Provider value={contextValue}>
       {children}
 
       {/* Süzülen Mini Profil Kartı */}

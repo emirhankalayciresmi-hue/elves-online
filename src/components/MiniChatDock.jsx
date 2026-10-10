@@ -3,9 +3,9 @@ import {
   MessageSquare, ChevronUp, ChevronDown, Send, Shield, Users,
   Sparkles, Crown, X, Maximize2, Minimize2
 } from 'lucide-react';
-import { ItemTooltipCard } from './ItemTooltip';
-import PlayerBadge from './PlayerBadge';
-import { createChatMessage } from '../services/chatService';
+import { ItemTooltipCard } from '@/components/ItemTooltip';
+import PlayerBadge from '@/components/PlayerBadge';
+import { createChatMessage } from '@/services/chatService';
 
 export default function MiniChatDock({
   player,

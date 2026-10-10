@@ -1,8 +1,7 @@
-// Kadim Elfler - Sohbet & Canlı İletişim Servisi (Chat Service)
-// Çok oyunculu (online) altyapıya hazır, 5 kanallı, Supabase Realtime destekli motor.
-import { supabase } from './supabaseClient';
+import { supabase } from '@/core/supabase/supabaseClient';
+import { storageManager, StorageKeys } from '@/core/storage/storageManager';
 
-export const CHAT_STORAGE_KEY = 'elves_rpg_chat_history';
+export const CHAT_STORAGE_KEY = StorageKeys.CHAT;
 
 export const CHAT_CHANNELS = [
   { id: 'general', label: 'Genel Sohbet', color: 'text-amber-300', border: 'border-amber-500/30', bg: 'bg-amber-950/20', badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
@@ -32,10 +31,8 @@ export const INITIAL_CHAT_MESSAGES = [
  */
 export function loadChatHistory() {
   try {
-    const raw = localStorage.getItem(CHAT_STORAGE_KEY);
-    if (!raw) return INITIAL_CHAT_MESSAGES;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) return INITIAL_CHAT_MESSAGES;
+    const parsed = storageManager.getItem(CHAT_STORAGE_KEY, null);
+    if (!parsed || !Array.isArray(parsed) || parsed.length === 0) return INITIAL_CHAT_MESSAGES;
 
     const demoSenders = ['Sylvaen_Elf', 'Aeliana_Sun', 'Lorvath_Muhafız', 'Lonca_Lideri', 'Ithil_Okçu', 'KRALLIK MÜHÜRÜ'];
     const hasDemo = parsed.some((m) => demoSenders.includes(m.sender));
@@ -58,7 +55,7 @@ export function loadChatHistory() {
 export function saveChatHistory(messages) {
   try {
     const trimmed = Array.isArray(messages) ? messages.slice(-150) : [];
-    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(trimmed));
+    storageManager.setItem(CHAT_STORAGE_KEY, trimmed);
   } catch (e) {
     console.error('Chat storage save error:', e);
   }

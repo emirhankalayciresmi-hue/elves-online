@@ -1,5 +1,4 @@
-// src/services/guildService.js
-import { GUILD_CREATION_COST, GUILD_CREATION_MIN_LEVEL, GUILD_SKILLS } from '../config/guildData';
+import { GUILD_CREATION_COST, GUILD_CREATION_MIN_LEVEL, GUILD_SKILLS } from '@/core/config/guildData';
 
 export function joinGuildService(player, guildId, guilds) {
   if (!player) return { success: false, error: 'Oyuncu bulunamadı.' };
@@ -310,3 +309,6 @@ export function upgradeSkillService(player, skillId, guilds) {
     message: `${skillMeta.name} yeteneği Seviye ${currentLevel + 1}'e yükseltildi!`,
   };
 }
+
+export { loadGuildsFromStorage, saveGuildsToStorage } from '@/core/config/guildData';
+

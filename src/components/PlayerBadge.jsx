@@ -2,10 +2,10 @@
 // Evrensel Oyuncu İsim Etiketi & Profil Tetikleyicisi
 // Sohbet, Lonca, Grup ve Sıralamalardaki tüm oyuncu isimleri bu bileşenle render edilir.
 
-import React from 'react';
-import { usePlayerProfile } from '../context/PlayerProfileContext';
+import React, { memo } from 'react';
+import { usePlayerProfile } from '@/context/PlayerProfileContext';
 
-export default function PlayerBadge({
+function PlayerBadge({
   name,
   level = null,
   kingdom = null,
@@ -80,3 +80,5 @@ export default function PlayerBadge({
     </span>
   );
 }
+
+export default memo(PlayerBadge);

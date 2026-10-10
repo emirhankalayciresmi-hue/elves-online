@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Sparkles } from 'lucide-react';
-import { ALL_MENUS } from '../config/gameData';
+import { ALL_MENUS } from '@/core/config/gameData';
 import {
   User, Briefcase, MessageSquare, Compass, Users, Shield,
   Skull, Pickaxe, Flame, Castle, Store, ShoppingBag, Settings

@@ -1,24 +1,40 @@
 // Kadim Elfler - Zamanlayıcı & Arka Plan Sefer Yönetim Hook'u (useGameTimers)
 // Zindan oto-av kasılma döngüsü ve 10 dakikalık madencilik işlemlerini yönetir.
 
-import { useEffect } from 'react';
-import { DUNGEON_GROUPS } from '../config/dungeonData';
-import { ELVEN_MINES, MINING_DURATION_SECONDS } from '../config/miningData';
+import { useEffect, useRef } from 'react';
+import { DUNGEON_GROUPS } from '@/core/config/dungeonData';
+import { ELVEN_MINES, MINING_DURATION_SECONDS } from '@/core/config/miningData';
 import {
   processDungeonCombatTick,
   executeMiningCompletion,
-} from '../services/gameEngine';
+} from '@/domain/gameEngine';
+import { storageManager, StorageKeys } from '@/core/storage/storageManager';
 
 export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
+  const onSavePlayerRef = useRef(onSavePlayer);
+  const onAnnouncementRef = useRef(onAnnouncement);
+  const lastCloudSyncRef = useRef(Date.now());
+
+  useEffect(() => {
+    onSavePlayerRef.current = onSavePlayer;
+  }, [onSavePlayer]);
+
+  useEffect(() => {
+    onAnnouncementRef.current = onAnnouncement;
+  }, [onAnnouncement]);
+
+  const hasActiveActivity = Boolean(player?.activeDungeon || player?.activeMine);
+
   // Arka plan otomatik tamamlama ve aktif zindan savaş zamanlayıcısı (1 sn interval)
   useEffect(() => {
-    if (!player?.activeDungeon && !player?.activeMine) return;
+    if (!hasActiveActivity) return;
 
     const timer = setInterval(() => {
       setPlayer((current) => {
         if (!current) return current;
         let updated = current;
         let stateChanged = false;
+        let shouldSyncCloud = false;
         const now = Date.now();
 
         // 1. Zindan Aktif Savaş Döngüsü (Her 3.5 saniyede 1 canavar kesimi & anlık ganimet)
@@ -31,11 +47,14 @@ export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
               stateChanged = true;
 
               if (combatRes.event === 'died') {
-                onAnnouncement?.(combatRes.message, 'high');
+                onAnnouncementRef.current?.(combatRes.message, 'high');
+                shouldSyncCloud = true;
               } else if (combatRes.event === 'completed') {
-                onAnnouncement?.(combatRes.message, 'normal');
+                onAnnouncementRef.current?.(combatRes.message, 'normal');
+                shouldSyncCloud = true;
               } else if (combatRes.leveledUp) {
-                onAnnouncement?.(`🎉 [${updated.name}] Seviye ${combatRes.newLevel} oldu!`, 'normal');
+                onAnnouncementRef.current?.(`🎉 [${updated.name}] Seviye ${combatRes.newLevel} oldu!`, 'normal');
+                shouldSyncCloud = true;
               }
             }
           }
@@ -49,25 +68,26 @@ export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
             const mine = ELVEN_MINES.find((m) => m.id === updated.activeMine.mineId) || ELVEN_MINES[0];
             updated = executeMiningCompletion(updated, mine, true);
             stateChanged = true;
+            shouldSyncCloud = true;
           }
         }
 
         if (stateChanged) {
-          onSavePlayer(updated);
+          // Yerel depolamaya anında yaz (veri kaybını sıfır gecikmeyle önle)
+          storageManager.setItem(StorageKeys.CHARACTER, updated);
+
+          // Supabase bulut kotasını korumak için sadece dönüm noktalarında veya dakikada 1 kez senkronize et
+          if (shouldSyncCloud || now - lastCloudSyncRef.current >= 60000) {
+            lastCloudSyncRef.current = now;
+            onSavePlayerRef.current?.(updated);
+          }
         }
         return updated;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [
-    player?.activeDungeon?.lastTickAt,
-    player?.activeDungeon?.startTime,
-    player?.activeMine?.startTime,
-    onSavePlayer,
-    setPlayer,
-    onAnnouncement,
-  ]);
+  }, [hasActiveActivity, setPlayer]);
 
   // Zindan Başlatma (Hemen savaş başlar, bekleme yok)
   const startDungeon = (dungeonId) => {
@@ -79,7 +99,7 @@ export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
       const remainingSecs = Math.ceil((player.dungeonCooldownUntil - Date.now()) / 1000);
       const mins = Math.floor(remainingSecs / 60);
       const secs = remainingSecs % 60;
-      alert(`⚠️ Zindan dinlenme süresindesiniz! Kalan süre: ${mins}dk ${secs}sn`);
+      onAnnouncement?.(`⚠️ Zindan dinlenme süresindesiniz! Kalan süre: ${mins}dk ${secs}sn`, 'high');
       return;
     }
 

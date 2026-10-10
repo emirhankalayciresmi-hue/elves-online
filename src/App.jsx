@@ -1,34 +1,34 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import HeaderStatusBar from './components/HeaderStatusBar';
-import BottomNav from './components/BottomNav';
-import DesktopSidebar from './components/DesktopSidebar';
-import MobileMenuDrawer from './components/MobileMenuDrawer';
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
+import HeaderStatusBar from '@/components/HeaderStatusBar';
+import BottomNav from '@/components/BottomNav';
+import DesktopSidebar from '@/components/DesktopSidebar';
+import MobileMenuDrawer from '@/components/MobileMenuDrawer';
 
-// Portal & Onboarding
-import LandingPortal from './views/LandingPortal/LandingPortal';
-import LayoutModeSelect from './views/Onboarding/LayoutModeSelect';
-import KingdomSelect from './views/Onboarding/KingdomSelect';
-import ClassSelect from './views/Onboarding/ClassSelect';
-import CharacterFinalize from './views/Onboarding/CharacterFinalize';
+// Portal & Onboarding (Code-Split)
+const LandingPortal = lazy(() => import('@/views/LandingPortal/LandingPortal'));
+const LayoutModeSelect = lazy(() => import('@/views/Onboarding/LayoutModeSelect'));
+const KingdomSelect = lazy(() => import('@/views/Onboarding/KingdomSelect'));
+const ClassSelect = lazy(() => import('@/views/Onboarding/ClassSelect'));
+const CharacterFinalize = lazy(() => import('@/views/Onboarding/CharacterFinalize'));
 
-// Tab Views
-import CharacterTab from './views/Tabs/CharacterTab';
-import InventoryTab from './views/Tabs/InventoryTab';
-import ChatView from './views/Tabs/ChatView';
-import QuestsTab from './views/Tabs/QuestsTab';
-import PartyView from './views/Tabs/PartyView';
-import GuildView from './views/Tabs/GuildView';
-import DungeonView from './views/Tabs/DungeonView';
-import MineView from './views/Tabs/MineView';
-import BossView from './views/Tabs/BossView';
-import KingdomTab from './views/Tabs/KingdomTab';
-import NpcView from './views/Tabs/NpcView';
-import MarketView from './views/Tabs/MarketView';
-import SettingsTab from './views/Tabs/SettingsTab';
+// Tab Views (Code-Split)
+const CharacterTab = lazy(() => import('@/views/Tabs/CharacterTab'));
+const InventoryTab = lazy(() => import('@/views/Tabs/InventoryTab'));
+const ChatView = lazy(() => import('@/views/Tabs/ChatView'));
+const QuestsTab = lazy(() => import('@/views/Tabs/QuestsTab'));
+const PartyView = lazy(() => import('@/views/Tabs/PartyView'));
+const GuildView = lazy(() => import('@/views/Tabs/GuildView'));
+const DungeonView = lazy(() => import('@/views/Tabs/DungeonView'));
+const MineView = lazy(() => import('@/views/Tabs/MineView'));
+const BossView = lazy(() => import('@/views/Tabs/BossView'));
+const KingdomTab = lazy(() => import('@/views/Tabs/KingdomTab'));
+const NpcView = lazy(() => import('@/views/Tabs/NpcView'));
+const MarketView = lazy(() => import('@/views/Tabs/MarketView'));
+const SettingsTab = lazy(() => import('@/views/Tabs/SettingsTab'));
 
-import { ASSETS } from './config/assets';
-import { ensurePlayerQuestState } from './config/questData';
-import { getRequiredExp } from './config/dungeonData';
+import { ASSETS } from '@/core/config/assets';
+import { ensurePlayerQuestState } from '@/domain/questEngine';
+import { getRequiredExp } from '@/core/config/dungeonData';
 import {
   executeDungeonCompletion,
   executeBossVictory,
@@ -37,9 +37,9 @@ import {
   discardOrSellItem,
   allocateStatPoint,
   resetStatPoints,
-} from './services/gameEngine';
-import { useGameTimers } from './hooks/useGameTimers';
-import MiniChatDock from './components/MiniChatDock';
+} from '@/domain/gameEngine';
+import { useGameTimers } from '@/hooks/useGameTimers';
+import MiniChatDock from '@/components/MiniChatDock';
 import {
   loadChatHistory,
   saveChatHistory,
@@ -47,32 +47,33 @@ import {
   fetchCloudChatMessages,
   sendChatMessageToCloud,
   subscribeToRealtimeChat,
-} from './services/chatService';
-import { PlayerProfileProvider } from './context/PlayerProfileContext';
-import { loadPartiesFromStorage, savePartiesToStorage } from './config/partyData';
-import { invitePlayerToPartyService } from './services/partyService';
-import { onAuthStateChange, signOutUser, getCurrentUser } from './services/authService';
+} from '@/services/chatService';
+import { PlayerProfileProvider } from '@/context/PlayerProfileContext';
+import { loadPartiesFromStorage, savePartiesToStorage } from '@/core/config/partyData';
+import { invitePlayerToPartyService } from '@/services/partyService';
+import { onAuthStateChange, signOutUser, getCurrentUser } from '@/services/authService';
 import {
   saveCharacterToCloud,
   fetchCharacterByUserId,
   debouncedSyncPlayerToCloud,
-} from './services/cloudCharacterService';
+} from '@/services/cloudCharacterService';
+import { storageManager, StorageKeys } from '@/core/storage/storageManager';
 
-const CHAR_STORAGE_KEY = 'elves_rpg_character_data';
-const MODE_STORAGE_KEY = 'elves_rpg_layout_mode';
-const RELEASE_VERSION_KEY = 'elves_rpg_live_release_v1';
+const CHAR_STORAGE_KEY = StorageKeys.CHARACTER;
+const MODE_STORAGE_KEY = StorageKeys.LAYOUT_MODE;
+const RELEASE_VERSION_KEY = StorageKeys.RELEASE_VERSION;
 
 // Demo verilerini ve eski sahte karakterleri bir defaya mahsus temizleme
 try {
-  if (localStorage.getItem(RELEASE_VERSION_KEY) !== 'beta_live_v1') {
-    localStorage.removeItem(CHAR_STORAGE_KEY);
-    localStorage.removeItem('elves_rpg_chat_history');
-    localStorage.removeItem('elves_rpg_parties_data');
-    localStorage.removeItem('elves_kadim_guilds');
-    localStorage.removeItem('elves_rpg_market_stalls');
-    localStorage.removeItem('elves_rpg_market_history');
-    localStorage.removeItem('elves_rpg_active_group_expedition');
-    localStorage.setItem(RELEASE_VERSION_KEY, 'beta_live_v1');
+  if (storageManager.getItem(RELEASE_VERSION_KEY) !== 'beta_live_v1') {
+    storageManager.removeItem(CHAR_STORAGE_KEY);
+    storageManager.removeItem(StorageKeys.CHAT);
+    storageManager.removeItem(StorageKeys.PARTIES);
+    storageManager.removeItem(StorageKeys.GUILDS);
+    storageManager.removeItem(StorageKeys.MARKET_STALLS);
+    storageManager.removeItem(StorageKeys.MARKET_HISTORY);
+    storageManager.removeItem(StorageKeys.GROUP_EXPEDITION);
+    storageManager.setItem(RELEASE_VERSION_KEY, 'beta_live_v1');
   }
 } catch (e) {
   console.error('Storage migration error:', e);
@@ -87,19 +88,15 @@ export default function App() {
 
   // Layout mode: 'mobile' | 'pc' | null
   const [layoutMode, setLayoutMode] = useState(() => {
-    try {
-      return localStorage.getItem(MODE_STORAGE_KEY) || null;
-    } catch {
-      return null;
-    }
+    return storageManager.getItem(MODE_STORAGE_KEY, null);
   });
 
   // Saved player state (wrapped with guaranteed quest and character state)
   const [player, setPlayer] = useState(() => {
     try {
-      const saved = localStorage.getItem(CHAR_STORAGE_KEY);
+      const saved = storageManager.getItem(CHAR_STORAGE_KEY, null);
       if (!saved) return null;
-      const parsed = JSON.parse(saved);
+      const parsed = typeof saved === 'object' ? saved : JSON.parse(saved);
       const basePlayer = {
         level: 1,
         exp: 0,
@@ -155,11 +152,7 @@ export default function App() {
   const savePlayerToStorage = useCallback(
     (updated) => {
       if (!updated) return;
-      try {
-        localStorage.setItem(CHAR_STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.error('Storage save error:', e);
-      }
+      storageManager.setItem(CHAR_STORAGE_KEY, updated);
       debouncedSyncPlayerToCloud(updated, currentUser?.id);
     },
     [currentUser]
@@ -174,11 +167,7 @@ export default function App() {
           if (cloudChar) {
             const ensured = ensurePlayerQuestState(cloudChar);
             setPlayer(ensured);
-            try {
-              localStorage.setItem(CHAR_STORAGE_KEY, JSON.stringify(ensured));
-            } catch (e) {
-              console.error(e);
-            }
+            storageManager.setItem(CHAR_STORAGE_KEY, ensured);
           }
         });
       }
@@ -192,11 +181,7 @@ export default function App() {
           if (cloudChar) {
             const ensured = ensurePlayerQuestState(cloudChar);
             setPlayer(ensured);
-            try {
-              localStorage.setItem(CHAR_STORAGE_KEY, JSON.stringify(ensured));
-            } catch (e) {
-              console.error(e);
-            }
+            storageManager.setItem(CHAR_STORAGE_KEY, ensured);
             setViewMode('game');
           }
         });
@@ -228,7 +213,18 @@ export default function App() {
 
     const unsubscribeChat = subscribeToRealtimeChat((newMsg) => {
       setChatMessages((prev) => {
-        if (prev.some((m) => m.id === newMsg.id)) return prev;
+        // Prevent duplicate echoes (both by exact id, or by identical sender + text within 6 seconds)
+        const isDuplicate = prev.some((m) =>
+          m.id === newMsg.id ||
+          (m.sender === newMsg.sender && m.text === newMsg.text && Math.abs((m.timestamp || 0) - (newMsg.timestamp || 0)) < 6000)
+        );
+        if (isDuplicate) {
+          return prev.map((m) =>
+            m.sender === newMsg.sender && m.text === newMsg.text && Math.abs((m.timestamp || 0) - (newMsg.timestamp || 0)) < 6000
+              ? { ...m, id: newMsg.id }
+              : m
+          );
+        }
         const updated = [...prev, newMsg];
         saveChatHistory(updated);
         return updated;
@@ -324,7 +320,7 @@ export default function App() {
   // Change layout mode
   const handleChangeLayoutMode = (mode) => {
     setLayoutMode(mode);
-    localStorage.setItem(MODE_STORAGE_KEY, mode);
+    storageManager.setItem(MODE_STORAGE_KEY, mode);
   };
 
   // Save character
@@ -385,7 +381,7 @@ export default function App() {
 
   // Reset character
   const handleResetPlayer = () => {
-    localStorage.removeItem(CHAR_STORAGE_KEY);
+    storageManager.removeItem(CHAR_STORAGE_KEY);
     setPlayer(null);
     setSelectedKingdom(null);
     setSelectedClass(null);
@@ -451,35 +447,43 @@ export default function App() {
   // 1. If user is in Portal mode, render LandingPortal
   if (viewMode === 'portal') {
     return (
-      <LandingPortal
-        onEnterGame={() => setViewMode('game')}
-        currentUser={currentUser}
-        savedCharacter={player}
-        onSignOut={async () => {
-          await signOutUser();
-          setCurrentUser(null);
-        }}
-      />
+      <Suspense fallback={<div className="min-h-screen bg-[#040709] flex items-center justify-center font-cinzel text-amber-300">Kadim Diyar Yükleniyor...</div>}>
+        <LandingPortal
+          onEnterGame={() => {
+            setViewMode('game');
+            window.history.pushState(null, '', '/oyun');
+          }}
+          currentUser={currentUser}
+          savedCharacter={player}
+          onSignOut={async () => {
+            await signOutUser();
+            setCurrentUser(null);
+          }}
+        />
+      </Suspense>
     );
   }
 
   // 2. If in Game mode but layout mode is not yet chosen, show LayoutModeSelect
   if (!layoutMode) {
     return (
-      <div className="min-h-screen bg-[#040709] text-slate-100 flex items-center justify-center p-4 relative overflow-x-hidden">
-        <div className="fixed inset-0 pointer-events-none opacity-30 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-950 via-[#060a0d] to-[#030507]" />
-        <div className="relative z-10 w-full">
-          <LayoutModeSelect onSelectMode={handleChangeLayoutMode} />
+      <Suspense fallback={<div className="min-h-screen bg-[#040709] flex items-center justify-center font-cinzel text-amber-300">Yükleniyor...</div>}>
+        <div className="min-h-screen bg-[#040709] text-slate-100 flex items-center justify-center p-4 relative overflow-x-hidden">
+          <div className="fixed inset-0 pointer-events-none opacity-30 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-950 via-[#060a0d] to-[#030507]" />
+          <div className="relative z-10 w-full">
+            <LayoutModeSelect onSelectMode={handleChangeLayoutMode} />
+          </div>
         </div>
-      </div>
+      </Suspense>
     );
   }
 
-  // Active tab views
+  // Active tab views (Code-split with Suspense)
   const renderActiveView = () => {
+    let viewContent = null;
     switch (activeTab) {
       case 'character':
-        return (
+        viewContent = (
           <CharacterTab
             player={player}
             layoutMode={layoutMode}
@@ -490,8 +494,9 @@ export default function App() {
             onResetStats={handleResetStats}
           />
         );
+        break;
       case 'inventory':
-        return (
+        viewContent = (
           <InventoryTab
             player={player}
             layoutMode={layoutMode}
@@ -501,8 +506,9 @@ export default function App() {
             onClearNewDrops={handleClearNewDrops}
           />
         );
+        break;
       case 'chat':
-        return (
+        viewContent = (
           <ChatView
             player={player}
             layoutMode={layoutMode}
@@ -511,16 +517,18 @@ export default function App() {
             whisperPrefill={whisperPrefill}
           />
         );
+        break;
       case 'quests':
-        return (
+        viewContent = (
           <QuestsTab
             player={player}
             layoutMode={layoutMode}
             onDismissBatchNotice={handleDismissBatchNotice}
           />
         );
+        break;
       case 'party':
-        return (
+        viewContent = (
           <PartyView
             player={player}
             layoutMode={layoutMode}
@@ -531,8 +539,9 @@ export default function App() {
             onBroadcast={broadcastSystemAnnouncement}
           />
         );
+        break;
       case 'guild':
-        return (
+        viewContent = (
           <GuildView
             player={player}
             layoutMode={layoutMode}
@@ -543,8 +552,9 @@ export default function App() {
             onBroadcast={broadcastSystemAnnouncement}
           />
         );
+        break;
       case 'dungeon':
-        return (
+        viewContent = (
           <DungeonView
             player={player}
             layoutMode={layoutMode}
@@ -558,8 +568,9 @@ export default function App() {
             }}
           />
         );
+        break;
       case 'mine':
-        return (
+        viewContent = (
           <MineView
             player={player}
             layoutMode={layoutMode}
@@ -568,18 +579,21 @@ export default function App() {
             onDismissMineReport={dismissMineReport}
           />
         );
+        break;
       case 'boss':
-        return (
+        viewContent = (
           <BossView
             player={player}
             layoutMode={layoutMode}
             onBossVictory={handleBossVictory}
           />
         );
+        break;
       case 'kingdom':
-        return <KingdomTab player={player} layoutMode={layoutMode} />;
+        viewContent = <KingdomTab player={player} layoutMode={layoutMode} />;
+        break;
       case 'npc':
-        return (
+        viewContent = (
           <NpcView
             player={player}
             layoutMode={layoutMode}
@@ -589,8 +603,9 @@ export default function App() {
             }}
           />
         );
+        break;
       case 'market':
-        return (
+        viewContent = (
           <MarketView
             player={player}
             layoutMode={layoutMode}
@@ -601,18 +616,23 @@ export default function App() {
             onBroadcast={broadcastSystemAnnouncement}
           />
         );
+        break;
       case 'settings':
-        return (
+        viewContent = (
           <SettingsTab
             player={player}
             layoutMode={layoutMode}
             onChangeLayoutMode={handleChangeLayoutMode}
             onResetPlayer={handleResetPlayer}
-            onOpenPortal={() => setViewMode('portal')}
+            onOpenPortal={() => {
+              setViewMode('portal');
+              window.history.pushState(null, '', '/anasayfa');
+            }}
           />
         );
+        break;
       default:
-        return (
+        viewContent = (
           <CharacterTab
             player={player}
             layoutMode={layoutMode}
@@ -624,6 +644,11 @@ export default function App() {
           />
         );
     }
+    return (
+      <Suspense fallback={<div className="p-8 text-center font-cinzel text-amber-300 animate-pulse">Kadim Elf Diyarı Yükleniyor...</div>}>
+        {viewContent}
+      </Suspense>
+    );
   };
 
   return (
@@ -683,7 +708,10 @@ export default function App() {
                 setPlayer(updated);
                 savePlayerToStorage(updated);
               }}
-              onOpenPortal={() => setViewMode('portal')}
+              onOpenPortal={() => {
+                setViewMode('portal');
+                window.history.pushState(null, '', '/anasayfa');
+              }}
             />
 
             {/* PC Mode: Full Width Sidebar + Content + Mini Chat Dock */}
@@ -732,7 +760,10 @@ export default function App() {
             <div className="text-center pt-2 pb-3 border-b border-amber-500/20 mb-4 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setViewMode('portal')}
+                onClick={() => {
+                  setViewMode('portal');
+                  window.history.pushState(null, '', '/anasayfa');
+                }}
                 className="text-[10px] font-mono text-amber-400 hover:text-amber-300 underline cursor-pointer"
               >
                 ← Portala Dön
@@ -749,35 +780,37 @@ export default function App() {
               </button>
             </div>
 
-            {onboardingStep === 1 && (
-              <KingdomSelect
-                selectedKingdom={selectedKingdom}
-                onSelectKingdom={setSelectedKingdom}
-                onNext={() => setOnboardingStep(2)}
-                layoutMode={layoutMode}
-              />
-            )}
+            <Suspense fallback={<div className="p-8 text-center font-cinzel text-amber-300 animate-pulse">Karakter Hazırlanıyor...</div>}>
+              {onboardingStep === 1 && (
+                <KingdomSelect
+                  selectedKingdom={selectedKingdom}
+                  onSelectKingdom={setSelectedKingdom}
+                  onNext={() => setOnboardingStep(2)}
+                  layoutMode={layoutMode}
+                />
+              )}
 
-            {onboardingStep === 2 && (
-              <ClassSelect
-                selectedClass={selectedClass}
-                onSelectClass={setSelectedClass}
-                selectedGender={selectedGender}
-                onSelectGender={setSelectedGender}
-                onNext={() => setOnboardingStep(3)}
-                onBack={() => setOnboardingStep(1)}
-                layoutMode={layoutMode}
-              />
-            )}
+              {onboardingStep === 2 && (
+                <ClassSelect
+                  selectedClass={selectedClass}
+                  onSelectClass={setSelectedClass}
+                  selectedGender={selectedGender}
+                  onSelectGender={setSelectedGender}
+                  onNext={() => setOnboardingStep(3)}
+                  onBack={() => setOnboardingStep(1)}
+                  layoutMode={layoutMode}
+                />
+              )}
 
-            {onboardingStep === 3 && (
-              <CharacterFinalize
-                kingdom={selectedKingdom}
-                characterClass={selectedClass}
-                onComplete={handleSavePlayer}
-                onBack={() => setOnboardingStep(2)}
-              />
-            )}
+              {onboardingStep === 3 && (
+                <CharacterFinalize
+                  kingdom={selectedKingdom}
+                  characterClass={selectedClass}
+                  onComplete={handleSavePlayer}
+                  onBack={() => setOnboardingStep(2)}
+                />
+              )}
+            </Suspense>
           </div>
         )}
         </main>

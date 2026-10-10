@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Package, ChevronLeft, ChevronRight, Layers, Sparkles } from 'lucide-react';
-import OrnateFrame from './OrnateFrame';
-import Metin2ComparisonTooltip from './ItemTooltip';
+import OrnateFrame from '@/components/OrnateFrame';
+import Metin2ComparisonTooltip from '@/components/ItemTooltip';
 
 export default function Metin2Inventory({
   player,
@@ -16,6 +16,29 @@ export default function Metin2Inventory({
   const [lastTap, setLastTap] = useState({ time: 0, itemId: null });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const longPressTimerRef = useRef(null);
+  const mousePosRef = useRef({ x: 0, y: 0 });
+  const rafIdRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    };
+  }, []);
+
+  const updateMousePos = (e) => {
+    const x = e.clientX;
+    const y = e.clientY;
+    const dx = Math.abs(x - mousePosRef.current.x);
+    const dy = Math.abs(y - mousePosRef.current.y);
+    if (dx < 15 && dy < 15) return;
+
+    if (rafIdRef.current) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      mousePosRef.current = { x, y };
+      setMousePos({ x, y });
+      rafIdRef.current = null;
+    });
+  };
 
   const inventory = Array.isArray(player?.inventory) ? player.inventory : [];
   const equipped = player?.equipped || {};
@@ -151,12 +174,13 @@ export default function Metin2Inventory({
                 onMouseEnter={(e) => {
                   if (item) {
                     setHoveredItem(item);
+                    mousePosRef.current = { x: e.clientX, y: e.clientY };
                     setMousePos({ x: e.clientX, y: e.clientY });
                   }
                 }}
                 onMouseMove={(e) => {
                   if (item) {
-                    setMousePos({ x: e.clientX, y: e.clientY });
+                    updateMousePos(e);
                   }
                 }}
                 onMouseLeave={() => setHoveredItem(null)}

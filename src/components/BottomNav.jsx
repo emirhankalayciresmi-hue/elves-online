@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Compass, Skull, ShoppingBag, Menu, Sparkles } from 'lucide-react';
-import { MOBILE_PRIMARY_TABS } from '../config/gameData';
+import { MOBILE_PRIMARY_TABS } from '@/core/config/gameData';
 
 const ICONS = {
   character: User,

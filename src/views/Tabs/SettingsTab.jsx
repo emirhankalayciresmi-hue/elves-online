@@ -9,6 +9,7 @@ export default function SettingsTab({ layoutMode, onChangeLayoutMode, onResetPla
   const [activeSubmenu, setActiveSubmenu] = useState('general');
   const [bgMusic, setBgMusic] = useState(false);
   const [soundEffects, setSoundEffects] = useState(true);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const submenus = ALL_MENUS.find((m) => m.id === 'settings')?.submenus || [];
 
@@ -168,19 +169,44 @@ export default function SettingsTab({ layoutMode, onChangeLayoutMode, onResetPla
               Farklı bir krallık veya sınıf seçmek isterseniz karakterinizi sıfırlayıp seçim ekranına dönebilirsiniz.
             </p>
             <div className="pt-1">
-              <ElvenButton
-                variant="danger"
-                size="sm"
-                onClick={() => {
-                  if (window.confirm('Karakter seçim ekranına dönmek istediğinize emin misiniz?')) {
-                    onResetPlayer();
-                  }
-                }}
-                icon={RotateCcw}
-                fullWidth
-              >
-                Karakteri Sıfırla
-              </ElvenButton>
+              {!confirmReset ? (
+                <ElvenButton
+                  variant="danger"
+                  size="sm"
+                  onClick={() => setConfirmReset(true)}
+                  icon={RotateCcw}
+                  fullWidth
+                >
+                  Karakteri Sıfırla
+                </ElvenButton>
+              ) : (
+                <div className="space-y-2 p-2.5 rounded bg-rose-950/60 border border-rose-500/40 text-center animate-fadeIn">
+                  <p className="text-[11px] font-mono text-rose-200">
+                    Karakteriniz sıfırlanacak. Emin misiniz?
+                  </p>
+                  <div className="flex gap-2">
+                    <ElvenButton
+                      variant="danger"
+                      size="sm"
+                      onClick={() => {
+                        setConfirmReset(false);
+                        onResetPlayer();
+                      }}
+                      fullWidth
+                    >
+                      Evet, Sıfırla
+                    </ElvenButton>
+                    <ElvenButton
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmReset(false)}
+                      fullWidth
+                    >
+                      Vazgeç
+                    </ElvenButton>
+                  </div>
+                </div>
+              )}
             </div>
           </OrnateFrame>
         </div>

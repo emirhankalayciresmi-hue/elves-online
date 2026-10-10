@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { supabase } from '@/core/supabase/supabaseClient';
 
 /**
  * Elves Online - Supabase Authentication Service

@@ -2,11 +2,12 @@
 // Evrensel Oyuncu Profil Servisi
 // Gerçek oyuncu ve diğer karakterlerin profil, ekipman ve analiz verilerini üretir.
 
-import { ITEMS_DATABASE } from '../config/itemsData';
-import { DEFAULT_PLAYER_STATS, EQUIPMENT_SLOTS, calculatePlayerStats } from '../config/gameData';
-import { ASSETS } from '../config/assets';
-import { calculateBadgeStats } from '../config/questData';
-import { loadGuildsFromStorage } from '../config/guildData';
+import { ITEMS_DATABASE } from '@/core/config/itemsData';
+import { DEFAULT_PLAYER_STATS, EQUIPMENT_SLOTS } from '@/core/config/gameData';
+import { calculatePlayerStats } from '@/domain/characterStats';
+import { ASSETS } from '@/core/config/assets';
+import { calculateBadgeStats } from '@/domain/questEngine';
+import { loadGuildsFromStorage } from '@/core/config/guildData';
 
 // İsimden sabit sayısal hash üretici (Deterministik sahte veriler için)
 function hashString(str = '') {

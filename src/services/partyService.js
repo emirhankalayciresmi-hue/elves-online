@@ -1,7 +1,4 @@
-// src/services/partyService.js
-// Grup Yönetim Mantığı: Katılma, Kurma, Ayrılma, Dağıtma, Üye Atma, Liderlik Devri ve Metin2 Liderlik Rol Ataması
-
-import { PARTY_TARGETS, LEADERSHIP_ROLES } from '../config/partyData';
+import { PARTY_TARGETS, LEADERSHIP_ROLES } from '@/core/config/partyData';
 
 /**
  * Gruba katılma servisi
@@ -481,3 +478,6 @@ export function invitePlayerToPartyService(player, targetName, parties) {
     message: `[${targetName}] grup davetini kabul etti ve gruba katıldı!`,
   };
 }
+
+export { loadPartiesFromStorage, savePartiesToStorage } from '@/core/config/partyData';
+

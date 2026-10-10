@@ -27,6 +27,14 @@ export default function DungeonView({
   const [activeSubmenu, setActiveSubmenu] = useState('solo');
   const [selectedBracket, setSelectedBracket] = useState('all');
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [claimCelebration, setClaimCelebration] = useState(null);
+
+  // Sync celebration modal when dungeon finishes
+  useEffect(() => {
+    if (player?.lastDungeonReport) {
+      setClaimCelebration(player.lastDungeonReport);
+    }
+  }, [player?.lastDungeonReport]);
 
   const isPC = layoutMode === 'pc';
   const submenus = ALL_MENUS.find((m) => m.id === 'dungeon')?.submenus || [];
@@ -48,7 +56,7 @@ export default function DungeonView({
   let durationSeconds = 1800; // 30 minutes default
   let progressPercent = 0;
   let remainingSeconds = 1800;
-  let _isCompleted = false;
+  let isCompleted = false;
   let currentMonsterIndex = 0;
 
   if (activeDungeon) {
@@ -57,7 +65,7 @@ export default function DungeonView({
     elapsedSeconds = Math.max(0, Math.floor((currentTime - start) / 1000));
     progressPercent = Math.min(100, Math.floor((elapsedSeconds / durationSeconds) * 100));
     remainingSeconds = Math.max(0, durationSeconds - elapsedSeconds);
-    _isCompleted = progressPercent >= 100;
+    isCompleted = progressPercent >= 100;
 
     // 5 monsters: each spans 20%
     currentMonsterIndex = Math.min(4, Math.floor(progressPercent / 20));
@@ -189,7 +197,10 @@ export default function DungeonView({
             <ElvenButton
               size="lg"
               fullWidth
-              onClick={() => setClaimCelebration(null)}
+              onClick={() => {
+                setClaimCelebration(null);
+                if (onDismissReport) onDismissReport();
+              }}
               className="mt-2"
             >
               Tamam ve Devam Et

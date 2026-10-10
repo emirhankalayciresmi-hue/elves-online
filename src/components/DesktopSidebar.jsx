@@ -3,8 +3,8 @@ import {
   User, Briefcase, MessageSquare, Compass, Users, Shield,
   Skull, Pickaxe, Flame, Castle, Store, ShoppingBag, Settings
 } from 'lucide-react';
-import { ALL_MENUS } from '../config/gameData';
-import OrnateFrame from './OrnateFrame';
+import { ALL_MENUS } from '@/core/config/gameData';
+import OrnateFrame from '@/components/OrnateFrame';
 
 const MENU_ICONS = {
   character: User,
