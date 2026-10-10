@@ -1,31 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Shield, Sword, Sparkles, User, Award, Heart, Zap,
   Crosshair, ShieldCheck, Flame, Snowflake, CloudLightning, Activity, Target,
   Crown, Castle, BookOpen, Layers, Skull, Users, ChevronRight, Compass,
-  RotateCcw
+  RotateCcw, ShieldAlert, Gem, CircleDot, Hand, Footprints, Wind, Feather,
+  Coins, Info, ArrowDownCircle
 } from 'lucide-react';
 import OrnateFrame from '../../components/OrnateFrame';
-import ImagePlaceholder from '../../components/ImagePlaceholder';
-import { ASSETS } from '../../config/assets';
 import {
   KINGDOMS,
   CLASSES,
   calculatePlayerStats,
   MAX_STAT_CAP,
+  EQUIPMENT_SLOTS,
 } from '../../config/gameData';
 import { calculateBadgeStats } from '../../config/questData';
+import { getRequiredExp } from '../../config/dungeonData';
+
+const SLOT_ICONS = {
+  helmet: Crown,
+  armor: Shield,
+  weapon: Sword,
+  offhand: ShieldAlert,
+  necklace: Gem,
+  ring1: CircleDot,
+  ring2: CircleDot,
+  gloves: Hand,
+  boots: Footprints,
+  belt: Layers,
+  cloak: Wind,
+  wings: Feather,
+};
 
 export default function CharacterTab({
   player,
   layoutMode = 'mobile',
+  onEquipItem,
+  onUnequipItem,
+  onDiscardItem,
   onAllocateStat,
   onResetStats,
 }) {
   if (!player) return null;
 
   const isPC = layoutMode === 'pc';
-  const classAssets = ASSETS.classes[player.classId] || {};
+  const [selectedSlotId, setSelectedSlotId] = useState('weapon');
 
   // Oyuncunun sınıf ve krallık detayları
   const currentKingdom = KINGDOMS.find(
@@ -45,133 +64,374 @@ export default function CharacterTab({
   const allocated = stats.allocatedStats || { hp: 0, str: 0, agi: 0, int: 0 };
   const availablePoints = stats.statPoints || 0;
 
+  // Seviye ve Tecrübe (EXP) hesaplaması
+  const currentLevel = player.level || 1;
+  const maxExp = player.maxExp || getRequiredExp(currentLevel);
+  const currentExp = player.exp || 0;
+  const expPercent = Math.min(100, Math.max(0, Math.round((currentExp / (maxExp || 100)) * 100)));
+
+  // Savaş Gücü (Combat Power / CP) Hesabı
+  const combatPower = Math.round(
+    (stats.physicalDamage || 0) * 2 +
+    (stats.magicDamage || 0) * 2 +
+    (stats.defense || 0) * 2 +
+    (stats.maxHp || 500) / 10 +
+    (stats.maxMana || 500) / 20 +
+    equippedCount * 45 +
+    currentLevel * 30
+  );
+
+  // Seçili yuva ve kuşanılan eşya
+  const selectedSlot = EQUIPMENT_SLOTS.find((s) => s.id === selectedSlotId) || EQUIPMENT_SLOTS[0];
+  const selectedEquippedItem = player?.equipped?.[selectedSlot.id] || null;
+
   return (
     <div className={`space-y-4 pb-20 animate-fadeIn ${isPC ? 'w-full' : ''}`}>
-      {/* Üst Karakter Bilgileri Başlığı */}
-      <OrnateFrame className="p-4 bg-gradient-to-r from-black/90 via-amber-950/25 to-black/90">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 shadow-elven-gold">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-cinzel font-bold text-lg text-amber-100 gold-text-glow tracking-wider">
-                Karakter Bilgileri
-              </h1>
-              <p className="text-xs text-amber-200/70 font-cormorant">
-                Kadim elven soyağacı, dövüş uzmanlıkları, temel stat dağıtımı ve savaş oranları dökümü.
-              </p>
-            </div>
-          </div>
-
-          {/* Stat Puanı & Kuşanılan Eşya Göstergesi */}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <div
-              className={`px-3.5 py-1.5 rounded-lg bg-black/60 border ${
-                availablePoints > 0
-                  ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.3)] animate-pulse'
-                  : 'border-amber-500/40'
-              } flex items-center gap-2 shadow-inner`}
-            >
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <div className="text-left font-mono leading-tight">
-                <span className="text-[10px] text-slate-400 block">STAT PUANI</span>
-                <span className="text-sm font-bold text-amber-200">{availablePoints} Puan</span>
+      {/* ======================================================== */}
+      {/* 1. ÜST GENEL DURUM & OYUNCU ÖZ PANELİ (PC & MOBİL SENKRON) */}
+      {/* ======================================================== */}
+      <OrnateFrame className="p-4 sm:p-5 bg-gradient-to-r from-black/95 via-amber-950/30 to-black/95 border-amber-500/40 w-full shadow-2xl">
+        <div className="space-y-4">
+          {/* Üst Satır: Karakter Adı, Rozetler & Savaş Gücü */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-500/20 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-950/80 border border-amber-400/60 flex items-center justify-center text-amber-200 shadow-elven-gold">
+                <Crown className="w-6 h-6 text-amber-300" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="font-cinzel font-bold text-xl sm:text-2xl text-amber-100 gold-text-glow tracking-wider">
+                    {player.name || 'Arwen'}
+                  </h1>
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 font-mono text-xs font-bold shadow-inner">
+                    Seviye {currentLevel}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className="text-[11px] font-cinzel font-semibold text-emerald-300 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/40 flex items-center gap-1 shadow-sm">
+                    <Crosshair className="w-3 h-3 text-emerald-400" />
+                    <span>{currentClass.name}</span>
+                  </span>
+                  <span className="text-[11px] font-cinzel font-semibold text-amber-300 bg-amber-950/70 px-2 py-0.5 rounded border border-amber-500/40 flex items-center gap-1 shadow-sm">
+                    <Castle className="w-3 h-3 text-amber-400" />
+                    <span>{currentKingdom.name}</span>
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="px-3 py-1.5 rounded-lg bg-black/60 border border-emerald-500/30 flex items-center gap-2 shadow-inner">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <div className="text-left font-mono leading-tight">
+            {/* Savaş Gücü & Dağıtılabilir Stat Puanı Göstergesi */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Savaş Gücü (CP) */}
+              <div className="px-3.5 py-2 rounded-xl bg-black/80 border border-amber-400/60 shadow-[0_0_18px_rgba(251,191,36,0.25)] flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-300">
+                  <Sword className="w-4 h-4" />
+                </div>
+                <div className="text-left font-mono leading-tight">
+                  <span className="text-[9px] text-slate-400 block tracking-wider uppercase">SAVAŞ GÜCÜ</span>
+                  <span className="text-base font-bold text-amber-200 gold-text-glow">
+                    {combatPower.toLocaleString('tr-TR')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Dağıtılabilir Stat Puanı */}
+              <div
+                className={`px-3.5 py-2 rounded-xl bg-black/80 border ${
+                  availablePoints > 0
+                    ? 'border-amber-400 shadow-[0_0_18px_rgba(251,191,36,0.35)] animate-pulse'
+                    : 'border-white/10'
+                } flex items-center gap-2.5`}
+              >
+                <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div className="text-left font-mono leading-tight">
+                  <span className="text-[9px] text-slate-400 block uppercase">STAT PUANI</span>
+                  <span className={`text-sm font-bold ${availablePoints > 0 ? 'text-amber-300' : 'text-slate-300'}`}>
+                    {availablePoints} Puan
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Orta Satır: Canlı Durum Barları (CAN, MANA, EXP) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* CAN (HP) Barı */}
+            <div className="p-3 rounded-xl bg-black/60 border border-rose-900/50 space-y-1.5">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="flex items-center gap-1.5 text-rose-400 font-bold">
+                  <Heart className="w-3.5 h-3.5 fill-rose-500/30" /> CAN (HP)
+                </span>
+                <span className="text-rose-200 font-bold">
+                  {stats.hp.toLocaleString('tr-TR')} / {stats.maxHp.toLocaleString('tr-TR')}
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-black/90 rounded-full overflow-hidden border border-rose-950 p-0.5">
+                <div
+                  className="h-full bg-gradient-to-r from-rose-700 via-rose-500 to-rose-400 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, Math.max(0, (stats.hp / (stats.maxHp || 500)) * 100))}%` }}
+                />
+              </div>
+            </div>
+
+            {/* MANA (MP) Barı */}
+            <div className="p-3 rounded-xl bg-black/60 border border-sky-900/50 space-y-1.5">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="flex items-center gap-1.5 text-sky-400 font-bold">
+                  <Zap className="w-3.5 h-3.5 fill-sky-500/30" /> MANA (MP)
+                </span>
+                <span className="text-sky-200 font-bold">
+                  {stats.mana.toLocaleString('tr-TR')} / {stats.maxMana.toLocaleString('tr-TR')}
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-black/90 rounded-full overflow-hidden border border-sky-950 p-0.5">
+                <div
+                  className="h-full bg-gradient-to-r from-sky-700 via-sky-500 to-sky-400 rounded-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, Math.max(0, (stats.mana / (stats.maxMana || 500)) * 100))}%` }}
+                />
+              </div>
+            </div>
+
+            {/* DENEYİM (EXP) Barı */}
+            <div className="p-3 rounded-xl bg-black/60 border border-emerald-900/50 space-y-1.5">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                  <Sparkles className="w-3.5 h-3.5" /> DENEYİM (EXP)
+                </span>
+                <span className="text-emerald-200 font-bold">
+                  {currentExp.toLocaleString('tr-TR')} / {maxExp.toLocaleString('tr-TR')} (%{expPercent})
+                </span>
+              </div>
+              <div className="w-full h-2.5 bg-black/90 rounded-full overflow-hidden border border-emerald-950 p-0.5">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-700 via-emerald-500 to-amber-400 rounded-full transition-all duration-300"
+                  style={{ width: `${expPercent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Alt Satır: Varlıklar & Kuşam Özeti */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs font-mono">
+            <div className="p-2.5 rounded-lg bg-black/50 border border-amber-500/20 flex items-center gap-2.5">
+              <Coins className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+              <div className="truncate">
+                <span className="text-[10px] text-slate-400 block">ALTIN</span>
+                <span className="text-amber-200 font-bold">
+                  {(player.gold || 0).toLocaleString('tr-TR')}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-black/50 border border-cyan-500/20 flex items-center gap-2.5">
+              <Gem className="w-4 h-4 text-cyan-400 flex-shrink-0" />
+              <div className="truncate">
+                <span className="text-[10px] text-slate-400 block">KRİSTAL</span>
+                <span className="text-cyan-200 font-bold">
+                  {(player.crystals || 0).toLocaleString('tr-TR')}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-black/50 border border-purple-500/20 flex items-center gap-2.5">
+              <Zap className="w-4 h-4 text-purple-400 flex-shrink-0" />
+              <div className="truncate">
+                <span className="text-[10px] text-slate-400 block">ENERJİ</span>
+                <span className="text-purple-200 font-bold">
+                  {player.energy || 100} / 100
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-black/50 border border-emerald-500/20 flex items-center gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <div className="truncate">
                 <span className="text-[10px] text-slate-400 block">KUŞAM DURUMU</span>
-                <span className="text-xs font-bold text-emerald-300">{equippedCount} / 12 Yuva Dolu</span>
+                <span className="text-emerald-300 font-bold">
+                  {equippedCount} / 12 Yuva Dolu
+                </span>
               </div>
             </div>
           </div>
         </div>
       </OrnateFrame>
 
-      {/* İki Sütunlu Kapsamlı RPG Bilgi Düzeni */}
+      {/* ======================================================== */}
+      {/* 2. ANA GÖVDE: SOLDA EKİPMANLAR, SAĞDA STAT & SAVAŞ ANALİZİ */}
+      {/* ======================================================== */}
       <div className={`grid gap-4 items-start ${isPC ? 'grid-cols-1 lg:grid-cols-12' : 'grid-cols-1'}`}>
         
-        {/* SOL SÜTUN: Portre, Sınıf Uzmanlığı & Krallık Mirası */}
+        {/* SOL SÜTUN: Kuşanılan 12 Ekipman Yuvası & Yuva İnceleme Paneli */}
         <div className={`space-y-4 ${isPC ? 'lg:col-span-5' : 'w-full'}`}>
-          {/* Karakter Portresi & Görsel Kimlik Kartı */}
-          <OrnateFrame className="p-4 space-y-3 text-center">
-            <div className="w-48 h-64 mx-auto rounded-lg overflow-hidden border border-elven-gold/60 shadow-2xl relative bg-black/60">
-              <ImagePlaceholder
-                src={player.classImage || classAssets.portrait}
-                alt={player.name}
-                label="Karakter Portresi"
-                dimensions="3:4 (300x400px)"
-                pathHint={`ASSETS.classes.${player.classId}.portrait`}
-                aspectRatio="aspect-[3/4]"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black via-black/80 to-transparent p-2 text-center">
-                <span className="text-xs font-cinzel font-bold text-amber-100 gold-text-glow">
-                  {player.name}
-                </span>
-                <span className="block text-[10px] text-amber-300/80 font-mono">
-                  Seviye {player.level || 1} • {currentClass.name}
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-white/5 space-y-1">
-              <div className="flex items-center justify-center gap-2 text-amber-300 font-cinzel font-bold text-sm">
-                <Crown className="w-4 h-4 text-amber-400" />
-                <span>{player.name}</span>
-              </div>
-              <p className="text-xs text-slate-400 font-cormorant italic">
-                {currentClass.lore || currentClass.description}
-              </p>
-            </div>
-          </OrnateFrame>
-
-          {/* Sınıf Bilgileri & Dövüş Uzmanlıkları */}
-          <OrnateFrame className="p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+          <OrnateFrame className="p-4 space-y-4 bg-gradient-to-b from-black/95 via-black/85 to-black/95">
+            {/* Başlık ve Kuşam Oranı */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-amber-400" />
-                <h3 className="font-cinzel text-xs font-bold text-amber-200 uppercase tracking-wider">
-                  Sınıf Uzmanlığı: {currentClass.name}
-                </h3>
+                <div className="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-cinzel text-xs font-bold text-amber-200 uppercase tracking-wider">
+                    Kuşanılan Ekipmanlar (12 Yuva)
+                  </h3>
+                  <p className="text-[10px] text-slate-400 font-cormorant">
+                    İncelemek için tıklayın, çıkarmak için çift tıklayın.
+                  </p>
+                </div>
               </div>
-              <span className="text-[10px] font-mono text-amber-300/80 uppercase">
-                {currentClass.role || 'Savaşçı Sınıfı'}
+              <span className="text-[10px] text-emerald-400 font-mono bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/40">
+                %{Math.round((equippedCount / 12) * 100)} Tamamlandı
               </span>
             </div>
 
-            <p className="text-xs text-slate-300 font-cormorant leading-relaxed">
-              {currentClass.description}
-            </p>
+            {/* 12 Yuva Izgarası (PC'de 3 veya 4 sütun) */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 text-center">
+              {EQUIPMENT_SLOTS.map((slot, i) => {
+                const Icon = SLOT_ICONS[slot.id] || Shield;
+                const equippedItem = player?.equipped?.[slot.id] || null;
+                const isSelected = selectedSlotId === slot.id;
 
-            <div className="p-2.5 rounded bg-black/40 border border-amber-950/40 text-[11px] font-mono text-slate-300 space-y-1">
-              <span className="text-amber-400 block font-bold">🎯 Öne Çıkan Özellik:</span>
-              <span>{currentClass.traits || 'Kadim dövüş sanatı ve elven refleksleri ustası.'}</span>
+                return (
+                  <div
+                    key={slot.id}
+                    onClick={() => setSelectedSlotId(slot.id)}
+                    onDoubleClick={() => {
+                      if (equippedItem && onUnequipItem) {
+                        onUnequipItem(slot.id);
+                      }
+                    }}
+                    title={
+                      equippedItem
+                        ? `${equippedItem.name} (Çift tıkla: Çıkar)`
+                        : `${slot.name} (${slot.slotHint || 'Boş'})`
+                    }
+                    className={`w-full aspect-square rounded-xl border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${
+                      isSelected
+                        ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400/80 scale-[1.03]'
+                        : equippedItem
+                        ? 'border-amber-500/60 bg-black/70 hover:border-amber-300 hover:bg-black/90 shadow-md'
+                        : 'border-dashed border-white/10 bg-black/40 hover:border-amber-400/50 hover:bg-white/5 opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    {/* Yuva Numarası */}
+                    <span className="absolute top-1 left-1.5 text-[8px] font-mono text-slate-500 group-hover:text-amber-400 transition-colors">
+                      {i + 1}
+                    </span>
+
+                    {equippedItem ? (
+                      <div className="flex flex-col items-center justify-center w-full h-full">
+                        <img
+                          src={equippedItem.image}
+                          alt={equippedItem.name}
+                          className="w-10 h-10 sm:w-11 sm:h-11 object-contain drop-shadow transition-transform group-hover:scale-110"
+                        />
+                        <span className="text-[9px] font-cinzel text-amber-100 text-center line-clamp-1 w-full px-0.5 mt-0.5 font-bold">
+                          {equippedItem.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-7 h-7 rounded-full bg-slate-900/90 border border-slate-700/80 flex items-center justify-center text-slate-400 mb-0.5 group-hover:text-amber-300 group-hover:border-amber-500/50 transition-all">
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[10px] font-cinzel text-amber-100 font-semibold line-clamp-1 group-hover:text-amber-200">
+                          {slot.name}
+                        </span>
+                        <span className="text-[8px] text-slate-500 font-mono">
+                          Boş
+                        </span>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          </OrnateFrame>
 
-          {/* Krallık Mirası & Bağlılık */}
-          <OrnateFrame className="p-4 space-y-3">
-            <div className="flex items-center justify-between border-b border-white/5 pb-2">
-              <div className="flex items-center gap-2">
-                <Castle className="w-4 h-4 text-amber-400" />
-                <h3 className="font-cinzel text-xs font-bold text-amber-200 uppercase tracking-wider">
-                  Krallık Mirası: {currentKingdom.name}
-                </h3>
+            {/* Seçili Yuva / Eşya İnceleme Detay Kartı */}
+            <div className="p-3.5 rounded-xl bg-black/75 border border-amber-500/30 space-y-2.5">
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300">
+                    {React.createElement(SLOT_ICONS[selectedSlot.id] || Shield, { className: 'w-3.5 h-3.5' })}
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-mono text-slate-400 block uppercase">SEÇİLİ YUVA</span>
+                    <span className="text-xs font-cinzel font-bold text-amber-200">{selectedSlot.name}</span>
+                  </div>
+                </div>
+                <span
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                    selectedEquippedItem
+                      ? 'bg-emerald-950/70 border-emerald-500/40 text-emerald-300'
+                      : 'bg-black/60 border-slate-700 text-slate-400'
+                  }`}
+                >
+                  {selectedEquippedItem ? 'Kuşanıldı ✓' : 'Yuva Boş'}
+                </span>
               </div>
-              <span className="text-[10px] font-mono text-amber-300/80">
-                Kadim Elf Diyarı
-              </span>
+
+              {selectedEquippedItem ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg bg-black/90 border border-amber-500/50 p-1 flex items-center justify-center flex-shrink-0 shadow-inner">
+                      <img
+                        src={selectedEquippedItem.image}
+                        alt={selectedEquippedItem.name}
+                        className="w-full h-full object-contain drop-shadow"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-cinzel font-bold text-xs text-amber-100 gold-text-glow truncate">
+                        {selectedEquippedItem.name}
+                      </h4>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className="text-[9px] font-mono text-amber-300 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-500/30">
+                          {selectedEquippedItem.setName || 'Kadim Elf Seti'}
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-400">
+                          {selectedEquippedItem.className || 'Genel'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedEquippedItem.desc && (
+                    <p className="text-xs text-slate-300 font-cormorant italic leading-relaxed bg-black/40 p-2.5 rounded-lg border border-white/5">
+                      &quot;{selectedEquippedItem.desc}&quot;
+                    </p>
+                  )}
+
+                  {onUnequipItem && (
+                    <button
+                      type="button"
+                      onClick={() => onUnequipItem(selectedSlot.id)}
+                      className="w-full py-2 rounded-lg bg-gradient-to-r from-amber-700/80 to-amber-900/80 hover:from-amber-600 hover:to-amber-800 text-amber-100 font-cinzel text-xs font-bold border border-amber-400/50 shadow-md hover:shadow-elven-gold transition-all cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <ArrowDownCircle className="w-4 h-4 text-amber-300" />
+                      <span>Ekipmanı Çıkar (Çantaya Gönder)</span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-3 px-2 bg-black/40 rounded-lg border border-white/5 space-y-1">
+                  <p className="text-xs font-cinzel text-amber-200/90 font-bold">
+                    Bu yuvaya bir {selectedSlot.name.toLowerCase()} takılabilir.
+                  </p>
+                  <p className="text-[11px] text-slate-400 font-cormorant">
+                    {selectedSlot.slotHint || 'Zindanlardan ganimet düşürerek veya pazardan temin edip Envanter sekmesinden kuşanabilirsiniz.'}
+                  </p>
+                </div>
+              )}
             </div>
 
-            <p className="text-xs text-slate-300 font-cormorant leading-relaxed italic">
-              &quot;{currentKingdom.description}&quot;
-            </p>
-            <div className="p-2.5 rounded bg-sky-950/20 border border-sky-500/20 text-[11px] text-sky-300 font-mono">
-              ✨ <strong>Krallık Lütfu:</strong> Kadim elven diyarının manevi koruması ile tüm zindan ve maceralarda krallık şerefiyle savaşıyorsunuz.
+            {/* Ekipman Yardım Bilgisi */}
+            <div className="p-2.5 rounded-lg bg-black/50 border border-white/5 text-[11px] text-slate-400 flex items-center gap-2">
+              <Info className="w-4 h-4 text-amber-400/80 flex-shrink-0" />
+              <span>
+                Yeni eşyaları kuşanmak için üst/alt menüden <strong>Envanter</strong> sekmesini kullanabilirsiniz.
+              </span>
             </div>
           </OrnateFrame>
         </div>
