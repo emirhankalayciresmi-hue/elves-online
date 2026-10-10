@@ -496,7 +496,13 @@ export function addItemToInventory(inventory, newItem, maxStack = 200) {
   if (!newItem) return Array.isArray(inventory) ? inventory : [];
 
   const currentInventory = Array.isArray(inventory) ? [...inventory] : [];
-  const isStackable = Boolean(newItem.isOre || newItem.type === 'ore' || newItem.stackable);
+  const isStackable = Boolean(
+    newItem.isOre ||
+    newItem.type === 'ore' ||
+    newItem.isMaterial ||
+    newItem.type === 'material' ||
+    newItem.stackable
+  );
 
   if (!isStackable) {
     // Ekipman vb. tekil eşyalar
@@ -505,16 +511,16 @@ export function addItemToInventory(inventory, newItem, maxStack = 200) {
 
   let remaining = Number(newItem.count) > 0 ? Number(newItem.count) : 1;
 
-  // 1. Önce aynı cevherden var olan ve 200'den az olan yuvayı bul ve üzerine ekle
+  // 1. Önce aynı eşyadan var olan ve 200'den az olan yuvayı bul ve üzerine ekle
   for (let i = 0; i < currentInventory.length; i++) {
     const existing = currentInventory[i];
     if (!existing) continue;
 
-    const isSameOre =
+    const isSameItem =
       (existing.id && existing.id === newItem.id) ||
-      (existing.name && existing.name === newItem.name && (existing.isOre || existing.type === 'ore'));
+      (existing.name && existing.name === newItem.name && (existing.isOre || existing.isMaterial));
 
-    if (isSameOre) {
+    if (isSameItem) {
       const currentCount = Number(existing.count) > 0 ? Number(existing.count) : 1;
       if (currentCount < maxStack) {
         const space = maxStack - currentCount;
