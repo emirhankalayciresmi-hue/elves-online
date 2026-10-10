@@ -905,6 +905,7 @@ export function consumeMaterialFromInventory(inventory = [], itemId, amount = 1)
  * 🔨 DEMİRCİ / EKİPMAN YÜKSELTME SİSTEMİ (+0 -> +9)
  * +1..+6 arası yalnızca Kadim Yükseltme Taşı ve Altın ister.
  * +7..+9 arası Kadim Yükseltme Taşı + İlgili Sınıf Malzemesi + Altın ister.
+ * KUŞANILAN EŞYALAR: Doğrudan demircide yükseltilebilir, karaktere anında yansır!
  * BAŞARISIZ OLURSA: Eşya +0 seviyesine geriler!
  */
 export function upgradeEquipment(player, instanceId) {
@@ -913,13 +914,34 @@ export function upgradeEquipment(player, instanceId) {
   }
 
   const currentInventory = Array.isArray(player.inventory) ? [...player.inventory] : [];
-  const itemIndex = currentInventory.findIndex((it) => it.instanceId === instanceId);
+  let isEquipped = false;
+  let equippedSlotKey = null;
+  let targetItem = null;
 
-  if (itemIndex === -1) {
-    return { success: false, error: 'Eşya envanterinizde bulunamadı!' };
+  // 1. Önce kuşanılan eşyalarda ara (Kuşanılan eşya demircide doğrudan yükseltilebilir)
+  const equipped = player.equipped || {};
+  for (const [slotKey, eqItem] of Object.entries(equipped)) {
+    if (eqItem && eqItem.instanceId === instanceId) {
+      isEquipped = true;
+      equippedSlotKey = slotKey;
+      targetItem = eqItem;
+      break;
+    }
   }
 
-  const targetItem = currentInventory[itemIndex];
+  // 2. Kuşanılanlarda yoksa envanterde ara
+  let itemIndex = -1;
+  if (!targetItem) {
+    itemIndex = currentInventory.findIndex((it) => it.instanceId === instanceId);
+    if (itemIndex !== -1) {
+      targetItem = currentInventory[itemIndex];
+    }
+  }
+
+  if (!targetItem) {
+    return { success: false, error: 'Eşya bulunamadı!' };
+  }
+
   if (targetItem.isOre || targetItem.type === 'ore' || targetItem.isMaterial || targetItem.type === 'material') {
     return { success: false, error: 'Yalnızca kuşanılabilir ekipmanlar yükseltilebilir!' };
   }
@@ -990,9 +1012,6 @@ export function upgradeEquipment(player, instanceId) {
   let finalItem;
   let resultMessage;
 
-  // Hedef eşyanın yeni kopyasını bul
-  const finalItemIdx = updatedInv.findIndex((it) => it.instanceId === instanceId);
-
   if (isSuccess) {
     finalItem = {
       ...targetItem,
@@ -1008,17 +1027,30 @@ export function upgradeEquipment(player, instanceId) {
     resultMessage = `💥 [BAŞARISIZ] Demirci çeliği soğuturken çatlak oluştu! "${targetItem.name}" +0 seviyesine geriledi.`;
   }
 
-  if (finalItemIdx !== -1) {
-    updatedInv[finalItemIdx] = finalItem;
+  let updatedEquipped = { ...(player.equipped || {}) };
+
+  if (isEquipped && equippedSlotKey) {
+    // Kuşanılan eşyaysa: Üzerinde takılı kalmaya devam eder, yeni statları anında yansır
+    updatedEquipped[equippedSlotKey] = finalItem;
   } else {
-    updatedInv.push(finalItem);
+    // Envanterdeki eşyaysa: Envanterde güncellenir
+    const finalItemIdx = updatedInv.findIndex((it) => it.instanceId === instanceId);
+    if (finalItemIdx !== -1) {
+      updatedInv[finalItemIdx] = finalItem;
+    } else {
+      updatedInv.push(finalItem);
+    }
   }
 
-  const updatedPlayer = {
+  let updatedPlayer = {
     ...player,
     gold: newGold,
     inventory: updatedInv,
+    equipped: updatedEquipped,
   };
+
+  // Karakter statlarını ve güçlerini yeniden hesapla
+  updatedPlayer = calculatePlayerStats(updatedPlayer);
 
   return {
     success: true,
@@ -1029,5 +1061,35 @@ export function upgradeEquipment(player, instanceId) {
     newLevel: isSuccess ? nextPlus : 0,
     message: resultMessage,
     rate: config.rate,
+    isEquipped,
+  };
+}
+
+/**
+ * Envanter Yuvalarını Yer Değiştirme (Swap / Sürükle - Bırak)
+ */
+export function swapInventorySlots(player, fromIndex, toIndex) {
+  if (!player || !Array.isArray(player.inventory)) return player;
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return player;
+
+  const inv = [...player.inventory];
+  while (inv.length <= Math.max(fromIndex, toIndex)) {
+    inv.push(null);
+  }
+
+  const itemA = inv[fromIndex] || null;
+  const itemB = inv[toIndex] || null;
+
+  inv[fromIndex] = itemB;
+  inv[toIndex] = itemA;
+
+  // Sonlardaki boşlukları temizle
+  while (inv.length > 0 && inv[inv.length - 1] === null) {
+    inv.pop();
+  }
+
+  return {
+    ...player,
+    inventory: inv,
   };
 }

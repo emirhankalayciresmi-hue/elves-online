@@ -31,13 +31,14 @@ export default function InventoryTab({
   onUnequipItem,
   onDiscardItem,
   onClearNewDrops,
+  onSwapSlots,
 }) {
   const isPC = layoutMode === 'pc';
   const [hoveredEquipped, setHoveredEquipped] = useState(null);
   const [pinnedEquipped, setPinnedEquipped] = useState(null);
   const [hoveredEmptySlot, setHoveredEmptySlot] = useState(null);
   const [equipMousePos, setEquipMousePos] = useState({ x: 0, y: 0 });
-  const [lastEquipTap, setLastEquipTap] = useState({ time: 0, slotId: null });
+  const lastEquipTapRef = useRef({ time: 0, slotId: null });
   const [contextMenu, setContextMenu] = useState({
     isOpen: false,
     position: { x: 0, y: 0 },
@@ -184,14 +185,14 @@ export default function InventoryTab({
                           }
                           if (equippedItem) {
                             const now = Date.now();
-                            if (now - lastEquipTap.time < 350 && lastEquipTap.slotId === slot.id) {
+                            if (now - lastEquipTapRef.current.time < 450 && lastEquipTapRef.current.slotId === slot.id) {
                               onUnequipItem?.(slot.id);
                               setPinnedEquipped(null);
                               setHoveredEquipped(null);
-                              setLastEquipTap({ time: 0, slotId: null });
+                              lastEquipTapRef.current = { time: 0, slotId: null };
                               return;
                             }
-                            setLastEquipTap({ time: now, slotId: slot.id });
+                            lastEquipTapRef.current = { time: now, slotId: slot.id };
                             setEquipMousePos({ x: e.clientX, y: e.clientY });
                             setPinnedEquipped((prev) =>
                               prev?.instanceId === equippedItem.instanceId ? null : equippedItem
@@ -218,6 +219,23 @@ export default function InventoryTab({
                             });
                           }
                         }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'copy';
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          try {
+                            const raw = e.dataTransfer.getData('text/plain');
+                            if (raw) {
+                              const data = JSON.parse(raw);
+                              if (data && data.instanceId) {
+                                const it = player?.inventory?.find((x) => x?.instanceId === data.instanceId);
+                                if (it) onEquipItem?.(it);
+                              }
+                            }
+                          } catch {}
+                        }}
                         className={`w-full aspect-square max-w-[96px] max-h-[96px] mx-auto rounded-lg border transition-all duration-200 flex flex-col items-center justify-center p-1 relative cursor-pointer group ${auraClass} ${
                           isPinned
                             ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400 scale-[1.03]'
@@ -225,7 +243,7 @@ export default function InventoryTab({
                             ? 'border-amber-300 bg-amber-500/15 ring-1 ring-amber-300 scale-[1.02]'
                             : equippedItem
                             ? 'border-amber-500/50 bg-black/60 hover:border-amber-300 hover:bg-black/80'
-                            : 'border-dashed border-amber-500/30 bg-black/40 hover:border-amber-400/70 hover:bg-white/5'
+                            : 'border-dashed border-slate-700/60 bg-black/40 hover:border-slate-500 hover:bg-white/5'
                         }`}
                       >
                         {/* Yuva Numarası */}
@@ -348,6 +366,7 @@ export default function InventoryTab({
             onEquipItem={onEquipItem}
             onUnequipItem={onUnequipItem}
             onDiscardItem={onDiscardItem}
+            onSwapSlots={onSwapSlots}
             title="Elf Heybesi (3 Sayfalı Envanter)"
           />
         </div>

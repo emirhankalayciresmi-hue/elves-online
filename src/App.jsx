@@ -38,6 +38,7 @@ import {
   allocateStatPoint,
   resetStatPoints,
   consolidateInventory,
+  swapInventorySlots,
 } from '@/domain/gameEngine';
 import { useGameTimers } from '@/hooks/useGameTimers';
 import MiniChatDock from '@/components/MiniChatDock';
@@ -198,6 +199,17 @@ export default function App() {
 
     return () => {
       unsubscribeAuth();
+    };
+  }, []);
+
+  // Global Sağ Tık Engeli (Tüm oyunda tarayıcının varsayılan menüsünü ve sayfa atlamasını engeller)
+  useEffect(() => {
+    const handleGlobalContextMenu = (e) => {
+      e.preventDefault();
+    };
+    window.addEventListener('contextmenu', handleGlobalContextMenu, { capture: true });
+    return () => {
+      window.removeEventListener('contextmenu', handleGlobalContextMenu, { capture: true });
     };
   }, []);
 
@@ -448,6 +460,13 @@ export default function App() {
     savePlayerToStorage(updated);
   };
 
+  const handleSwapInventorySlots = (fromIndex, toIndex) => {
+    if (!player) return;
+    const updated = swapInventorySlots(player, fromIndex, toIndex);
+    setPlayer(updated);
+    savePlayerToStorage(updated);
+  };
+
   // Boss victory & cooldown
   const handleBossVictory = (boss, rewards) => {
     const updated = executeBossVictory(player, boss, rewards);
@@ -534,6 +553,7 @@ export default function App() {
             onUnequipItem={handleUnequipItem}
             onDiscardItem={handleDiscardItem}
             onClearNewDrops={handleClearNewDrops}
+            onSwapSlots={handleSwapInventorySlots}
           />
         );
         break;

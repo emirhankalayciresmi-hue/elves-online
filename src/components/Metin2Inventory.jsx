@@ -11,18 +11,23 @@ export default function Metin2Inventory({
   onEquipItem,
   onDiscardItem,
   onUnequipItem,
+  onSwapSlots,
   title = 'Elf Heybesi (3 Sayfalı Envanter)',
 }) {
   const [activePage, setActivePage] = useState(1); // 1, 2, 3
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'warrior', 'ninja', 'mage', 'ores', 'materials'
   const [hoveredItem, setHoveredItem] = useState(null);
   const [pinnedItem, setPinnedItem] = useState(null);
-  const [lastTap, setLastTap] = useState({ time: 0, itemId: null });
+  const [draggedSlotIndex, setDraggedSlotIndex] = useState(null);
+  const [dragOverSlotIndex, setDragOverSlotIndex] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [contextMenu, setContextMenu] = useState({
     isOpen: false,
     position: { x: 0, y: 0 },
     item: null,
   });
+
+  const lastTapRef = useRef({ time: 0, itemId: null });
   const longPressTimerRef = useRef(null);
   const mousePosRef = useRef({ x: 0, y: 0 });
   const rafIdRef = useRef(null);
@@ -51,12 +56,67 @@ export default function Metin2Inventory({
   const inventory = consolidateInventory(Array.isArray(player?.inventory) ? player.inventory : []);
   const equipped = player?.equipped || {};
 
+  // Sınıfsal / Maden / Yükseltme filtreleri
+  const isFiltered = activeFilter !== 'all';
+  const filteredInventory = isFiltered
+    ? inventory.filter((item) => {
+        if (!item) return false;
+        const itemClass = (item.classId || '').toLowerCase();
+        const itemSet = (item.setKey || '').toLowerCase();
+        const itemClassName = (item.className || '').toLowerCase();
+
+        if (activeFilter === 'warrior') {
+          return itemClass === 'warrior' || itemSet === 'warrior' || itemClassName.includes('savaşçı');
+        }
+        if (activeFilter === 'ninja') {
+          return (
+            itemClass === 'ninja' ||
+            itemClass === 'assassin' ||
+            itemSet === 'assassin' ||
+            itemSet === 'ninja' ||
+            itemClassName.includes('ninja')
+          );
+        }
+        if (activeFilter === 'mage') {
+          return itemClass === 'mage' || itemSet === 'mage' || itemClassName.includes('büyücü');
+        }
+        if (activeFilter === 'ores') return item.isOre || item.type === 'ore' || item.slot === 'ore';
+        if (activeFilter === 'materials') return item.isMaterial || item.type === 'material' || item.isUpgradeStone;
+        return true;
+      })
+    : inventory;
+
   const SLOTS_PER_PAGE = 16; // 4x4 grid
   const TOTAL_PAGES = 3; // 48 slots total
   const startIndex = (activePage - 1) * SLOTS_PER_PAGE;
-  const pageSlots = Array.from({ length: SLOTS_PER_PAGE }, (_, i) => inventory[startIndex + i] || null);
+  const pageSlots = Array.from(
+    { length: SLOTS_PER_PAGE },
+    (_, i) => (isFiltered ? filteredInventory[startIndex + i] : inventory[startIndex + i]) || null
+  );
 
-  // Double-tap or double-click to directly equip
+  const FILTER_TABS = [
+    { id: 'all', label: 'Tümü' },
+    { id: 'warrior', label: 'Savaşçı' },
+    { id: 'ninja', label: 'Ninja' },
+    { id: 'mage', label: 'Büyücü' },
+    { id: 'ores', label: '💎 Madenler' },
+    { id: 'materials', label: '🔮 Yükseltme Eşyaları' },
+  ];
+
+  // Doğrudan Çift Tıkla Kuşanma Yardımcısı (Sıfır gecikme)
+  const handleItemEquipDirect = (item) => {
+    if (!item) return;
+    if (item.isOre || item.type === 'ore' || item.isMaterial || item.type === 'material') {
+      setPinnedItem((prev) => (prev?.instanceId === item.instanceId ? null : item));
+      return;
+    }
+    if (!isItemForPlayerClass(item, player)) return;
+    onEquipItem?.(item);
+    setPinnedItem(null);
+    setHoveredItem(null);
+  };
+
+  // Tek tıkla incele / 2. tıkta (450ms içinde) anında kuşan
   const handleSlotClick = (item) => {
     if (contextMenu.isOpen) {
       setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null });
@@ -67,30 +127,31 @@ export default function Metin2Inventory({
       return;
     }
 
-    const isClassLocked = Boolean(item && !isItemForPlayerClass(item, player));
-
     const now = Date.now();
-    if (!isClassLocked && now - lastTap.time < 350 && lastTap.itemId === item.instanceId) {
-      // 2nd fast click -> DIRECT EQUIP!
-      onEquipItem?.(item);
-      setPinnedItem(null);
-      setHoveredItem(null);
-      setLastTap({ time: 0, itemId: null });
-    } else {
-      setLastTap({ time: now, itemId: item.instanceId });
-      // Single click pins/inspects the item
-      setPinnedItem((prev) => (prev?.instanceId === item.instanceId ? null : item));
+    const isDoubleTap =
+      now - lastTapRef.current.time < 450 && lastTapRef.current.itemId === item.instanceId;
+
+    if (isDoubleTap) {
+      lastTapRef.current = { time: 0, itemId: null };
+      handleItemEquipDirect(item);
+      return;
     }
+
+    lastTapRef.current = { time: now, itemId: item.instanceId };
+    setPinnedItem((prev) => (prev?.instanceId === item.instanceId ? null : item));
+  };
+
+  // Doğrudan tarayıcı yerel çift tıklaması (Dblclick)
+  const handleDoubleClick = (item) => {
+    handleItemEquipDirect(item);
   };
 
   // Long press for mobile touch
   const handleTouchStart = (item) => {
     if (!item || !isItemForPlayerClass(item, player)) return;
     longPressTimerRef.current = setTimeout(() => {
-      onEquipItem?.(item);
-      setPinnedItem(null);
-      setHoveredItem(null);
-    }, 500);
+      handleItemEquipDirect(item);
+    }, 450);
   };
 
   const handleTouchEnd = () => {
@@ -100,7 +161,6 @@ export default function Metin2Inventory({
   };
 
   const displayedItem = pinnedItem || hoveredItem;
-  // If the inspected item has an equipped counterpart in that slot, show side-by-side comparison!
   const comparedEquippedItem = displayedItem ? equipped[displayedItem.slot] : null;
 
   return (
@@ -167,9 +227,35 @@ export default function Metin2Inventory({
           </div>
         </div>
 
+        {/* Sınıfsal Ayrım / Madenler / Yükseltme Eşyaları Filtre Çubuğu */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] scrollbar-thin">
+          {FILTER_TABS.map((tab) => {
+            const isTabActive = activeFilter === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setActiveFilter(tab.id);
+                  setActivePage(1);
+                }}
+                className={`px-2.5 py-1 rounded-lg font-cinzel whitespace-nowrap border text-[10px] font-bold transition-all cursor-pointer ${
+                  isTabActive
+                    ? 'bg-amber-500/25 border-amber-400 text-amber-200 shadow-elven-gold'
+                    : 'bg-black/50 border-slate-800 text-slate-400 hover:text-amber-100 hover:border-slate-600'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 px-0.5">
-          <span>Sayfa {activePage} / 3 (16 Yuva)</span>
-          <span className="text-amber-400/80">Sağ Tık: Menü (Kuşan/Sil) • 2x Tıkla: Kuşan</span>
+          <span>
+            {isFiltered ? `${FILTER_TABS.find((t) => t.id === activeFilter)?.label} Listeleniyor` : `Sayfa ${activePage} / 3 (16 Yuva)`}
+          </span>
+          <span className="text-amber-400/80">Sürükle: Hizala/Kuşan • 2x Tıkla: Kuşan • Sağ Tık: Menü</span>
         </div>
 
         {/* 16 Slots Grid (100x100 Boxes) */}
@@ -180,14 +266,81 @@ export default function Metin2Inventory({
             const isNewDrop = Boolean(item && player?.newDungeonDrops?.includes(item?.instanceId));
             const isClassLocked = Boolean(item && !isItemForPlayerClass(item, player));
             const absoluteSlotIndex = startIndex + idx;
+            const isBeingDragged = draggedSlotIndex === absoluteSlotIndex;
+            const isDragOver = dragOverSlotIndex === absoluteSlotIndex;
 
-            const isEquip = Boolean(item && !item.isOre && item.type !== 'ore' && !item.isMaterial && item.type !== 'material' && item.type !== 'potion' && (item.slot || item.setKey || item.slotName));
-            const plusLevel = isEquip ? (Number(item.plusLevel) || 0) : 0;
-            const auraClass = isEquip && plusLevel === 7 ? 'aura-electric-plus7' : isEquip && plusLevel === 8 ? 'aura-electric-plus8' : isEquip && plusLevel >= 9 ? 'aura-electric-plus9' : '';
+            const isEquip = Boolean(
+              item &&
+                !item.isOre &&
+                item.type !== 'ore' &&
+                !item.isMaterial &&
+                item.type !== 'material' &&
+                item.type !== 'potion' &&
+                (item.slot || item.setKey || item.slotName)
+            );
+            const plusLevel = isEquip ? Number(item.plusLevel) || 0 : 0;
+            const auraClass =
+              isEquip && plusLevel === 7
+                ? 'aura-electric-plus7'
+                : isEquip && plusLevel === 8
+                ? 'aura-electric-plus8'
+                : isEquip && plusLevel >= 9
+                ? 'aura-electric-plus9'
+                : '';
 
             return (
               <div
                 key={idx}
+                draggable={Boolean(item)}
+                onDragStart={(e) => {
+                  if (!item) return;
+                  const realIndex = inventory.findIndex((it) => it && it.instanceId === item.instanceId);
+                  const effectiveIndex = realIndex !== -1 ? realIndex : absoluteSlotIndex;
+                  e.dataTransfer.setData(
+                    'text/plain',
+                    JSON.stringify({
+                      type: 'inventory_slot',
+                      slotIndex: effectiveIndex,
+                      instanceId: item.instanceId,
+                    })
+                  );
+                  e.dataTransfer.effectAllowed = 'move';
+                  setDraggedSlotIndex(absoluteSlotIndex);
+                }}
+                onDragEnd={() => {
+                  setDraggedSlotIndex(null);
+                  setDragOverSlotIndex(null);
+                }}
+                onDragOver={(e) => {
+                  if (isFiltered) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                  if (dragOverSlotIndex !== absoluteSlotIndex) {
+                    setDragOverSlotIndex(absoluteSlotIndex);
+                  }
+                }}
+                onDragLeave={() => {
+                  if (dragOverSlotIndex === absoluteSlotIndex) {
+                    setDragOverSlotIndex(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  if (isFiltered) return;
+                  e.preventDefault();
+                  setDragOverSlotIndex(null);
+                  try {
+                    const raw = e.dataTransfer.getData('text/plain');
+                    if (raw) {
+                      const data = JSON.parse(raw);
+                      if (data && data.type === 'inventory_slot' && data.slotIndex !== undefined) {
+                        if (data.slotIndex !== absoluteSlotIndex) {
+                          onSwapSlots?.(data.slotIndex, absoluteSlotIndex);
+                        }
+                      }
+                    }
+                  } catch {}
+                  setDraggedSlotIndex(null);
+                }}
                 onMouseEnter={(e) => {
                   if (item) {
                     setHoveredItem(item);
@@ -217,17 +370,16 @@ export default function Metin2Inventory({
                   }
                 }}
                 onDoubleClick={() => {
-                  if (!item) return;
-                  if (item.isOre || item.type === 'ore' || item.isMaterial || item.type === 'material') {
-                    setPinnedItem((prev) => (prev?.instanceId === item.instanceId ? null : item));
-                  } else if (!isClassLocked) {
-                    onEquipItem?.(item);
-                  }
+                  handleDoubleClick(item);
                 }}
                 onTouchStart={() => handleTouchStart(item)}
                 onTouchEnd={handleTouchEnd}
                 className={`w-full aspect-square max-w-[100px] max-h-[100px] mx-auto rounded-lg border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${auraClass} ${
-                  isNewDrop
+                  isBeingDragged
+                    ? 'opacity-40 scale-95 border-amber-400 border-dashed'
+                    : isDragOver
+                    ? 'border-2 border-emerald-400 bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.7)] scale-105'
+                    : isNewDrop
                     ? 'border-2 border-yellow-400 ring-2 ring-amber-300 bg-amber-500/25 shadow-[0_0_18px_rgba(250,204,21,0.9)] animate-pulse scale-[1.03]'
                     : isPinned
                     ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400 scale-[1.03]'

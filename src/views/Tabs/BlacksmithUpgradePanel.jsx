@@ -18,22 +18,64 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
   const [selectedInstanceId, setSelectedInstanceId] = useState(null);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [lastResult, setLastResult] = useState(null);
+  const [classFilter, setClassFilter] = useState('all'); // 'all', 'warrior', 'ninja', 'mage'
+  const [isDragOverAnvil, setIsDragOverAnvil] = useState(false);
 
-  // Çantadaki yükseltilebilir ekipmanlar
+  // 1. Kuşanılan ekipmanlar (Kullanıcı kuralı: Her zaman ilk sırada listelensin ve 'Kuşanıldı' ibaresi olsun)
+  const equipped = player?.equipped || {};
+  const equippedList = Object.entries(equipped)
+    .filter(([, it]) => it && Boolean(it.slot || it.setKey || it.slotName))
+    .map(([slotKey, it]) => ({
+      ...it,
+      isEquippedItem: true,
+      equippedSlotKey: slotKey,
+    }));
+
+  // 2. Çantadaki yükseltilebilir ekipmanlar
   const inventory = Array.isArray(player?.inventory) ? player.inventory : [];
-  const equipmentInBag = inventory.filter(
-    (item) =>
-      item &&
-      !item.isOre &&
-      item.type !== 'ore' &&
-      !item.isMaterial &&
-      item.type !== 'material' &&
-      item.type !== 'potion' &&
-      (item.slot || item.setKey || item.slotName)
-  );
+  const equipmentInBag = inventory
+    .filter(
+      (item) =>
+        item &&
+        !item.isOre &&
+        item.type !== 'ore' &&
+        !item.isMaterial &&
+        item.type !== 'material' &&
+        item.type !== 'potion' &&
+        (item.slot || item.setKey || item.slotName)
+    )
+    .map((it) => ({ ...it, isEquippedItem: false }));
+
+  // Kuşanılanlar HER ZAMAN İLK SIRADA!
+  const allEquipment = [...equippedList, ...equipmentInBag];
+
+  // Sınıfsal filtreleme
+  const filteredEquipment = allEquipment.filter((item) => {
+    if (classFilter === 'all') return true;
+    const itemClass = (item.classId || '').toLowerCase();
+    const itemSet = (item.setKey || '').toLowerCase();
+    const itemClassName = (item.className || '').toLowerCase();
+
+    if (classFilter === 'warrior') {
+      return itemClass === 'warrior' || itemSet === 'warrior' || itemClassName.includes('savaşçı');
+    }
+    if (classFilter === 'ninja') {
+      return (
+        itemClass === 'ninja' ||
+        itemClass === 'assassin' ||
+        itemSet === 'assassin' ||
+        itemSet === 'ninja' ||
+        itemClassName.includes('ninja')
+      );
+    }
+    if (classFilter === 'mage') {
+      return itemClass === 'mage' || itemSet === 'mage' || itemClassName.includes('büyücü');
+    }
+    return true;
+  });
 
   // Seçili eşya
-  const selectedItem = equipmentInBag.find((it) => it.instanceId === selectedInstanceId) || null;
+  const selectedItem = allEquipment.find((it) => it.instanceId === selectedInstanceId) || null;
   const currentPlus = Number(selectedItem?.plusLevel) || 0;
   const nextPlus = currentPlus + 1;
   const config = currentPlus < 9 ? UPGRADE_CONFIG[nextPlus] : null;
@@ -169,21 +211,53 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
         </div>
       )}
 
-      {/* 2. DEMİRCİ ÖRSÜ / YÜKSELTME YUVASI */}
-      <OrnateFrame className="p-4 sm:p-5 bg-gradient-to-b from-[#0a1215] via-[#080d10] to-[#04080a] border-amber-400 space-y-4 shadow-xl">
-        {!selectedItem ? (
-          /* Eşya Seçilmediğinde Boş Örs */
-          <div className="p-8 text-center space-y-3 border-2 border-dashed border-amber-500/30 rounded-xl bg-black/40">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-950/50 border border-amber-500/50 flex items-center justify-center text-amber-300 shadow-elven-inner animate-pulse">
-              <Hammer className="w-8 h-8 text-amber-400" />
+      {/* 2. DEMİRCİ ÖRSÜ / YÜKSELTME YUVASI (Sürükle - Bırak Destekli) */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+          setIsDragOverAnvil(true);
+        }}
+        onDragLeave={() => setIsDragOverAnvil(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragOverAnvil(false);
+          try {
+            const raw = e.dataTransfer.getData('text/plain');
+            let droppedId = raw;
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed && parsed.instanceId) droppedId = parsed.instanceId;
+            } catch {}
+            if (droppedId) {
+              setSelectedInstanceId(droppedId);
+              setLastResult(null);
+            }
+          } catch (err) {
+            console.error('Anvil drop error:', err);
+          }
+        }}
+      >
+        <OrnateFrame
+          className={`p-4 sm:p-5 bg-gradient-to-b from-[#0a1215] via-[#080d10] to-[#04080a] space-y-4 shadow-xl transition-all duration-200 ${
+            isDragOverAnvil
+              ? 'border-2 border-emerald-400 ring-2 ring-emerald-400/80 bg-emerald-950/20 shadow-[0_0_25px_rgba(16,185,129,0.5)]'
+              : 'border-amber-400'
+          }`}
+        >
+          {!selectedItem ? (
+            /* Eşya Seçilmediğinde Boş Örs */
+            <div className="p-8 text-center space-y-3 border-2 border-dashed border-amber-500/30 rounded-xl bg-black/40">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-950/50 border border-amber-500/50 flex items-center justify-center text-amber-300 shadow-elven-inner animate-pulse">
+                <Hammer className="w-8 h-8 text-amber-400" />
+              </div>
+              <h4 className="font-cinzel text-base font-bold text-amber-200">
+                {isDragOverAnvil ? '✨ Eşyayı Örse Bırakın!' : 'Demirci Örsü Boş'}
+              </h4>
+              <p className="text-xs text-slate-300 font-cormorant max-w-md mx-auto">
+                Yükseltmek istediğiniz ekipmana tıklayın veya sürükleyip örsün üzerine bırakın.
+              </p>
             </div>
-            <h4 className="font-cinzel text-base font-bold text-amber-200">
-              Demirci Örsü Boş
-            </h4>
-            <p className="text-xs text-slate-300 font-cormorant max-w-md mx-auto">
-              Yükseltmek istediğiniz ekipmanı aşağıdaki çantanızdan seçin. +1 ile +9 arasında güçlendirebilirsiniz.
-            </p>
-          </div>
         ) : (
           /* Eşya Seçildiğinde Aktif Örs Kartı */
           <div className="space-y-4">
@@ -398,28 +472,60 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
           </div>
         )}
       </OrnateFrame>
+    </div>
 
-      {/* 3. ÇANTADAKİ YÜKSELTİLEBİLİR EKİPMANLAR */}
+      {/* 3. ÇANTADAKİ VE KUŞANILAN YÜKSELTİLEBİLİR EKİPMANLAR */}
       <OrnateFrame className="p-4 space-y-3 bg-black/80">
-        <div className="flex items-center justify-between border-b border-white/10 pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-amber-400" />
             <h4 className="font-cinzel text-xs font-bold text-amber-200 uppercase tracking-wider">
-              Çantanızdaki Yükseltilebilir Ekipmanlar ({equipmentInBag.length} Eşya)
+              Yükseltilebilir Ekipmanlarınız ({filteredEquipment.length} Eşya)
             </h4>
           </div>
-          <span className="text-[10px] font-mono text-slate-400">
-            Örse koymak için ekipmana tıklayın
+
+          {/* Sınıfsal Filtre Butonları */}
+          <div className="flex items-center gap-1 text-[10px] font-mono">
+            {[
+              { id: 'all', label: 'Tümü' },
+              { id: 'warrior', label: 'Savaşçı' },
+              { id: 'ninja', label: 'Ninja' },
+              { id: 'mage', label: 'Büyücü' },
+            ].map((tab) => {
+              const isTabActive = classFilter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setClassFilter(tab.id)}
+                  className={`px-2 py-0.5 rounded font-cinzel font-bold border transition-all cursor-pointer ${
+                    isTabActive
+                      ? 'bg-amber-500/25 border-amber-400 text-amber-200 shadow-elven-gold'
+                      : 'bg-black/50 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="text-[10px] font-mono text-slate-400 flex flex-wrap items-center justify-between gap-2">
+          <span>Örse tıklayarak veya sürükleyip bırakarak yerleştirebilirsiniz</span>
+          <span className="text-emerald-400 font-semibold flex items-center gap-1">
+            <span>🛡️</span>
+            <span>Kuşanılan eşyalar her zaman ilk sırada</span>
           </span>
         </div>
 
-        {equipmentInBag.length === 0 ? (
+        {filteredEquipment.length === 0 ? (
           <div className="p-6 text-center text-xs text-slate-400 font-cormorant italic">
-            Çantanızda yükseltilebilir ekipman bulunmuyor. Zindanlardan eşya düşürerek demirciye getirebilirsiniz.
+            Bu kategoride yükseltilebilir ekipman bulunmuyor. Zindanlardan eşya düşürerek demirciye getirebilirsiniz.
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5">
-            {equipmentInBag.map((item) => {
+            {filteredEquipment.map((item) => {
               const isSelected = selectedInstanceId === item.instanceId;
               const plus = Number(item.plusLevel) || 0;
               const aura = plus === 7 ? 'aura-electric-plus7' : plus === 8 ? 'aura-electric-plus8' : plus >= 9 ? 'aura-electric-plus9' : '';
@@ -427,6 +533,11 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
               return (
                 <div
                   key={item.instanceId}
+                  draggable={true}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', item.instanceId);
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
                   onClick={() => {
                     setSelectedInstanceId(item.instanceId);
                     setLastResult(null);
@@ -434,9 +545,19 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
                   className={`w-full aspect-square rounded-xl border p-1.5 flex flex-col items-center justify-center relative cursor-pointer transition-all duration-200 group ${aura} ${
                     isSelected
                       ? 'border-amber-400 bg-amber-500/25 ring-2 ring-amber-400 shadow-elven-gold scale-105'
+                      : item.isEquippedItem
+                      ? 'border-emerald-500/60 bg-emerald-950/25 hover:border-emerald-400 hover:bg-emerald-950/40'
                       : 'border-amber-500/40 bg-black/60 hover:border-amber-300 hover:bg-black/90'
                   }`}
                 >
+                  {/* Kuşanıldı İbaresi (Her zaman ilk sırada yer alan kuşanılmış eşyalarda) */}
+                  {item.isEquippedItem && (
+                    <span className="absolute top-1 left-1 font-mono text-[7px] font-black text-emerald-200 bg-emerald-950/95 border border-emerald-400/80 rounded px-1 py-0.2 shadow flex items-center gap-0.5 z-10 select-none">
+                      <span>🛡️</span>
+                      <span>Kuşanıldı</span>
+                    </span>
+                  )}
+
                   <img
                     src={item.image}
                     alt={item.name}
@@ -462,6 +583,7 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
                     plus === 7 ? 'text-blue-300' :
                     plus === 8 ? 'text-purple-300' :
                     plus >= 9 ? 'text-rose-300' :
+                    item.isEquippedItem ? 'text-emerald-200' :
                     'text-amber-100'
                   }`}>
                     {item.name}{plus > 0 ? ` +${plus}` : ''}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Shield, Sword, Sparkles, User, Award, Heart, Zap,
   Crosshair, ShieldCheck, Flame, Snowflake, CloudLightning, Activity, Target,
@@ -54,8 +54,8 @@ export default function CharacterTab({
     isEquipped: false,
     slotKey: null,
   });
-  const [lastEquipTap, setLastEquipTap] = useState({ time: 0, slotId: null });
-  const [lastCandidateTap, setLastCandidateTap] = useState({ time: 0, itemId: null });
+  const lastEquipTapRef = useRef({ time: 0, slotId: null });
+  const lastCandidateTapRef = useRef({ time: 0, itemId: null });
 
   // Oyuncunun sınıf ve krallık detayları
   const currentKingdom = KINGDOMS.find(
@@ -327,12 +327,12 @@ export default function CharacterTab({
                       }
                       if (equippedItem) {
                         const now = Date.now();
-                        if (now - lastEquipTap.time < 350 && lastEquipTap.slotId === slot.id) {
+                        if (now - lastEquipTapRef.current.time < 450 && lastEquipTapRef.current.slotId === slot.id) {
                           onUnequipItem?.(slot.id);
-                          setLastEquipTap({ time: 0, slotId: null });
+                          lastEquipTapRef.current = { time: 0, slotId: null };
                           return;
                         }
-                        setLastEquipTap({ time: now, slotId: slot.id });
+                        lastEquipTapRef.current = { time: now, slotId: slot.id };
                       }
                       setSelectedSlotId(slot.id);
                     }}
@@ -354,6 +354,23 @@ export default function CharacterTab({
                         });
                       }
                     }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      try {
+                        const raw = e.dataTransfer.getData('text/plain');
+                        if (raw) {
+                          const data = JSON.parse(raw);
+                          if (data && data.instanceId) {
+                            const it = player?.inventory?.find((x) => x?.instanceId === data.instanceId);
+                            if (it) onEquipItem?.(it);
+                          }
+                        }
+                      } catch {}
+                    }}
                     title={
                       equippedItem
                         ? `${equippedItem.name} (Çift tıkla: Çıkar • Sağ tık: Menü)`
@@ -364,7 +381,7 @@ export default function CharacterTab({
                         ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400/80 scale-[1.03]'
                         : equippedItem
                         ? 'border-amber-500/60 bg-black/70 hover:border-amber-300 hover:bg-black/90 shadow-md'
-                        : 'border-dashed border-white/10 bg-black/40 hover:border-amber-400/50 hover:bg-white/5 opacity-70 hover:opacity-100'
+                        : 'border-dashed border-slate-700/60 bg-black/40 hover:border-slate-500 hover:bg-white/5 opacity-70 hover:opacity-100'
                     }`}
                   >
                     {/* Yuva Numarası */}
@@ -507,11 +524,11 @@ export default function CharacterTab({
                                 setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: false, slotKey: null });
                               }
                               const now = Date.now();
-                              if (now - lastCandidateTap.time < 350 && lastCandidateTap.itemId === candidate.instanceId) {
+                              if (now - lastCandidateTapRef.current.time < 450 && lastCandidateTapRef.current.itemId === candidate.instanceId) {
                                 onEquipItem?.(candidate);
-                                setLastCandidateTap({ time: 0, itemId: null });
+                                lastCandidateTapRef.current = { time: 0, itemId: null };
                               } else {
-                                setLastCandidateTap({ time: now, itemId: candidate.instanceId });
+                                lastCandidateTapRef.current = { time: now, itemId: candidate.instanceId };
                               }
                             }}
                             onDoubleClick={() => {
