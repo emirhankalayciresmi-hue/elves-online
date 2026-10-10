@@ -3,6 +3,7 @@ import { Store, Hammer, Gem, Sparkles, Shield, Sword, FlaskConical, Coins, Check
 import OrnateFrame from '../../components/OrnateFrame';
 import SubmenuBar from '../../components/SubmenuBar';
 import ElvenButton from '../../components/ElvenButton';
+import BlacksmithUpgradePanel from './BlacksmithUpgradePanel';
 import { ALL_MENUS } from '../../config/gameData';
 import { buyPotions } from '../../services/gameEngine';
 
@@ -58,10 +59,6 @@ export default function NpcView({ player, layoutMode = 'mobile', onUpdatePlayer 
         cost: '200 Altın',
         desc: 'Tehlike anında başkente anında ışınlar.',
       },
-    ],
-    blacksmith: [
-      { id: 1, name: 'Silah Yükseltme (+1 -> +9)', cost: '500 Altın + Demir', desc: 'Silahınızın saldırı gücünü artırır' },
-      { id: 2, name: 'Zırh Güçlendirme', cost: '500 Altın + Deri', desc: 'Zırhınızın savunmasını artırır' },
     ],
     gem_expert: [
       { id: 1, name: 'Kavrama Taşı (+3)', cost: '1,500 Altın', desc: '+%5 Delici vuruş şansı ekler' },
@@ -124,23 +121,32 @@ export default function NpcView({ player, layoutMode = 'mobile', onUpdatePlayer 
         </div>
       )}
 
-      <div className="flex items-center justify-between px-1">
-        <h3 className="font-cinzel text-sm font-bold text-amber-200 uppercase tracking-wider flex items-center gap-2">
-          <Store className="w-4 h-4 text-amber-400" />
-          <span>Şehir Zanaatkarı: {currentSubmenu?.label}</span>
-        </h3>
-        <div className="flex items-center gap-3 text-[11px] font-mono">
-          <span className="text-rose-300 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-500/40">
-            ❤️ HP İksir: {(player.hpPotions ?? 0).toLocaleString('tr-TR')}
-          </span>
-          <span className="text-sky-300 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-500/40">
-            ⚡ MP İksir: {(player.manaPotions ?? 0).toLocaleString('tr-TR')}
-          </span>
-          <span className="text-amber-300 font-bold flex items-center gap-1">
-            <Coins className="w-3.5 h-3.5" /> {(player.gold ?? 0).toLocaleString('tr-TR')} Altın
-          </span>
-        </div>
-      </div>
+      {/* DEMİRCİ AKTİFSE: ÖZEL ETKİLEŞİMLİ YÜKSELTME ODASI */}
+      {activeSubmenu === 'blacksmith' ? (
+        <BlacksmithUpgradePanel
+          player={player}
+          layoutMode={layoutMode}
+          onUpdatePlayer={onUpdatePlayer}
+        />
+      ) : (
+        <>
+          <div className="flex items-center justify-between px-1">
+            <h3 className="font-cinzel text-sm font-bold text-amber-200 uppercase tracking-wider flex items-center gap-2">
+              <Store className="w-4 h-4 text-amber-400" />
+              <span>Şehir Zanaatkarı: {currentSubmenu?.label}</span>
+            </h3>
+            <div className="flex items-center gap-3 text-[11px] font-mono">
+              <span className="text-rose-300 bg-rose-950/60 px-2 py-0.5 rounded border border-rose-500/40">
+                ❤️ HP İksir: {(player.hpPotions ?? 0).toLocaleString('tr-TR')}
+              </span>
+              <span className="text-sky-300 bg-sky-950/60 px-2 py-0.5 rounded border border-sky-500/40">
+                ⚡ MP İksir: {(player.manaPotions ?? 0).toLocaleString('tr-TR')}
+              </span>
+              <span className="text-amber-300 font-bold flex items-center gap-1">
+                <Coins className="w-3.5 h-3.5" /> {(player.gold ?? 0).toLocaleString('tr-TR')} Altın
+              </span>
+            </div>
+          </div>
 
       <div className={`gap-3 ${isPC ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'space-y-3'}`}>
         {activeItems.map((item) => {
@@ -233,6 +239,8 @@ export default function NpcView({ player, layoutMode = 'mobile', onUpdatePlayer 
           );
         })}
       </div>
-    </div>
+    </>
+  )}
+</div>
   );
 }

@@ -37,6 +37,8 @@ export function calculateBaseAndAllocatedStats(player) {
  * Oyuncu nesnesinden tüm hesaplanmış nihai RPG niteliklerini türetir.
  * Dağıtılan statlar, rozet bonusları ve temel değerleri harmanlar.
  */
+import { calculateItemPlusStats } from '../config/itemsData';
+
 export function calculatePlayerStats(player = {}, badgeBonus = {}) {
   const currentLevel = player.level || 1;
   const allocated = player.allocatedStats || {
@@ -46,8 +48,24 @@ export function calculatePlayerStats(player = {}, badgeBonus = {}) {
     int: 0,
   };
 
+  // Kuşanılan Ekipmanların +0..+9 Bonusları
+  const equipped = player.equipped || {};
+  let equippedPhysDmg = 0;
+  let equippedMagicDmg = 0;
+  let equippedDef = 0;
+  let equippedHp = 0;
+
+  Object.values(equipped).forEach((item) => {
+    if (!item) return;
+    const plusStats = calculateItemPlusStats(item);
+    equippedPhysDmg += plusStats.physicalDamage || 0;
+    equippedMagicDmg += plusStats.magicDamage || 0;
+    equippedDef += plusStats.defense || 0;
+    equippedHp += plusStats.hp || 0;
+  });
+
   // 1 HP = +40 Can
-  const bonusHp = (allocated.hp || 0) * 40 + (badgeBonus.hp || 0);
+  const bonusHp = (allocated.hp || 0) * 40 + (badgeBonus.hp || 0) + equippedHp;
   const maxHp = 500 + bonusHp;
   const currentHp = Math.min(player.hp ?? maxHp, maxHp);
 
@@ -58,14 +76,14 @@ export function calculatePlayerStats(player = {}, badgeBonus = {}) {
 
   // 1 STR = +3 Direkt Fiziksel Hasar
   const strength = (allocated.str || 0) + (badgeBonus.strength || 0);
-  const physicalDamage = BASE_PHYSICAL_DAMAGE + strength * 3;
+  const physicalDamage = BASE_PHYSICAL_DAMAGE + strength * 3 + equippedPhysDmg;
 
   // 1 AGI = +2 Savunma, +%0.2 Kaçınma, +%0.2 Kritik
   const agility = (allocated.agi || 0) + (badgeBonus.agility || 0);
   const intelligence = (allocated.int || 0) + (badgeBonus.intelligence || 0);
-  const magicDamage = intelligence * 3;
+  const magicDamage = intelligence * 3 + equippedMagicDmg;
 
-  const defense = agility * 2 + (badgeBonus.defense || 0);
+  const defense = agility * 2 + (badgeBonus.defense || 0) + equippedDef;
   const dodgeChance = Number(((agility * 0.2) + (badgeBonus.dodgeChance || 0)).toFixed(1));
   const criticalChance = Number(((agility * 0.2) + (badgeBonus.criticalChance || 0)).toFixed(1));
 

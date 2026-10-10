@@ -1,6 +1,7 @@
 import React from 'react';
-import { Sparkles, Shield, Trash2, ArrowRightLeft, Lock } from 'lucide-react';
+import { Sparkles, Shield, Trash2, ArrowRightLeft, Lock, Zap } from 'lucide-react';
 import ElvenButton from './ElvenButton';
+import { calculateItemPlusStats } from '../config/itemsData';
 
 export function ItemTooltipCard({
   item,
@@ -15,31 +16,46 @@ export function ItemTooltipCard({
 }) {
   if (!item) return null;
 
+  const isEquip = Boolean(!item.isOre && item.type !== 'ore' && !item.isMaterial && item.type !== 'material' && item.type !== 'potion' && (item.slot || item.setKey || item.slotName));
+  const plusLevel = isEquip ? (Number(item.plusLevel) || 0) : 0;
+  const plusStats = isEquip ? calculateItemPlusStats(item) : { physicalDamage: 0, magicDamage: 0, defense: 0, hp: 0 };
+  const auraClass = isEquip && plusLevel === 7 ? 'aura-electric-plus7' : isEquip && plusLevel === 8 ? 'aura-electric-plus8' : isEquip && plusLevel >= 9 ? 'aura-electric-plus9' : '';
+
   return (
-    <div className="w-64 p-3 rounded-lg border-2 border-amber-400/90 bg-[#070b0e]/95 backdrop-blur-md shadow-2xl shadow-black ring-1 ring-amber-500/40 text-left space-y-2.5 z-50 animate-fadeIn">
+    <div className={`w-64 p-3 rounded-lg border-2 border-amber-400/90 bg-[#070b0e]/95 backdrop-blur-md shadow-2xl shadow-black ring-1 ring-amber-500/40 text-left space-y-2.5 z-50 animate-fadeIn ${auraClass}`}>
       {/* Title Prefix Header */}
       <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
         <span
           className={`text-[10px] font-mono font-bold uppercase px-1.5 py-0.5 rounded ${
             item.isOre || item.type === 'ore'
               ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/50'
+              : item.isMaterial || item.type === 'material'
+              ? 'bg-indigo-950/90 text-indigo-300 border border-indigo-500/50'
               : isEquipped
               ? 'bg-amber-950/90 text-amber-300 border border-amber-500/50'
               : 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/50'
           }`}
         >
-          {titlePrefix || (item.isOre || item.type === 'ore' ? 'Elf Madeni & Cevher' : isEquipped ? 'Kuşanılan Ekipman' : 'Çantadaki Eşya')}
+          {titlePrefix || (item.isOre || item.type === 'ore' ? 'Elf Madeni & Cevher' : item.isMaterial || item.type === 'material' ? 'Yükseltme Malzemesi' : isEquipped ? 'Kuşanılan Ekipman' : 'Çantadaki Eşya')}
         </span>
         <span className="text-[10px] font-mono text-slate-400">
-          {item.isOre || item.type === 'ore' ? item.rarity || 'Maden' : `Lv. ${item.levelMin || 1}-${item.levelMax || 10}`}
+          {item.isOre || item.type === 'ore' || item.isMaterial ? item.rarity || 'Materyal' : `Lv. ${item.levelMin || 1}-${item.levelMax || 10}`}
         </span>
       </div>
 
       {/* Item Image & Title */}
       <div className="flex items-center gap-2.5">
-        <div className={`w-12 h-12 rounded-lg border p-1 flex items-center justify-center flex-shrink-0 shadow-inner ${
+        <div className={`w-12 h-12 rounded-lg border p-1 flex items-center justify-center flex-shrink-0 shadow-inner relative ${
           item.isOre || item.type === 'ore'
             ? 'border-emerald-400/80 bg-emerald-950/40'
+            : item.isMaterial || item.type === 'material'
+            ? 'border-indigo-400/80 bg-indigo-950/40'
+            : plusLevel === 7
+            ? 'border-blue-400 bg-blue-950/50'
+            : plusLevel === 8
+            ? 'border-purple-400 bg-purple-950/50'
+            : plusLevel >= 9
+            ? 'border-rose-400 bg-rose-950/50'
             : 'border-amber-400/60 bg-black/70'
         }`}>
           <img
@@ -47,10 +63,25 @@ export function ItemTooltipCard({
             alt={item.name}
             className="w-full h-full object-contain drop-shadow"
           />
+          {isEquip && (
+            <span className={`absolute bottom-0.5 right-0.5 font-mono text-[8px] font-black px-1 rounded ${
+              plusLevel === 7 ? 'text-blue-200 bg-blue-950 border border-blue-400' :
+              plusLevel === 8 ? 'text-purple-200 bg-purple-950 border border-purple-400' :
+              plusLevel >= 9 ? 'text-rose-200 bg-rose-950 border border-red-500' :
+              'text-amber-200 bg-black/90 border border-amber-500/70'
+            }`}>
+              +{plusLevel}
+            </span>
+          )}
         </div>
         <div className="overflow-hidden">
-          <h4 className="font-cinzel font-bold text-xs text-amber-100 gold-text-glow line-clamp-2">
-            {item.name}
+          <h4 className={`font-cinzel font-bold text-xs line-clamp-2 ${
+            isEquip && plusLevel === 7 ? 'text-blue-200' :
+            isEquip && plusLevel === 8 ? 'text-purple-200' :
+            isEquip && plusLevel >= 9 ? 'text-rose-200' :
+            'text-amber-100 gold-text-glow'
+          }`}>
+            {item.name}{isEquip && plusLevel > 0 ? ` +${plusLevel}` : ''}
           </h4>
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             <span className="text-[9px] font-mono text-amber-300 bg-amber-950/60 px-1 py-0.2 rounded border border-amber-500/30">
@@ -66,12 +97,12 @@ export function ItemTooltipCard({
       {/* Slot & Info */}
       <div className="p-2 rounded bg-black/60 border border-white/5 space-y-1 text-[11px] font-mono">
         <div className="flex justify-between text-slate-300">
-          <span className="text-slate-400">{item.isOre || item.type === 'ore' ? 'Eşya Türü:' : 'Ekipman Yuvası:'}</span>
+          <span className="text-slate-400">{item.isOre || item.type === 'ore' || item.isMaterial ? 'Eşya Türü:' : 'Ekipman Yuvası:'}</span>
           <span className="text-amber-200 font-semibold">
-            {item.slotName || (item.isOre ? 'Cevher & Materyal' : item.slot)}
+            {item.slotName || (item.isOre ? 'Cevher' : item.isMaterial ? 'Yükseltme Malzemesi' : item.slot)}
           </span>
         </div>
-        {item.isOre || item.type === 'ore' ? (
+        {item.isOre || item.type === 'ore' || item.isMaterial || item.type === 'material' ? (
           <>
             <div className="flex justify-between text-slate-300">
               <span className="text-slate-400">Yığın Miktarı:</span>
@@ -82,17 +113,59 @@ export function ItemTooltipCard({
             <div className="flex justify-between text-slate-300">
               <span className="text-slate-400">Birim Satış:</span>
               <span className="text-yellow-300 font-semibold">
-                {(item.sellPrice || 1500).toLocaleString('tr-TR')} Altın
+                {(item.sellPrice || 250).toLocaleString('tr-TR')} Altın
               </span>
             </div>
           </>
         ) : (
-          <div className="flex justify-between text-slate-300">
-            <span className="text-slate-400">Gereken Seviye:</span>
-            <span className="text-emerald-400 font-semibold">
-              {item.levelMin || 1} - {item.levelMax || 10} Seviye
-            </span>
-          </div>
+          <>
+            <div className="flex justify-between text-slate-300">
+              <span className="text-slate-400">Gereken Seviye:</span>
+              <span className="text-emerald-400 font-semibold">
+                {item.levelMin || 1} - {item.levelMax || 10} Seviye
+              </span>
+            </div>
+            <div className="flex justify-between text-slate-300">
+              <span className="text-slate-400">Yükseltme Kademesi:</span>
+              <span className={`font-bold ${
+                plusLevel === 7 ? 'text-blue-300' :
+                plusLevel === 8 ? 'text-purple-300' :
+                plusLevel >= 9 ? 'text-rose-300' :
+                'text-amber-300'
+              }`}>
+                +{plusLevel} / +9
+              </span>
+            </div>
+            {/* + Seviyesinden Gelen Bonuslar */}
+            {plusLevel > 0 && (
+              <div className="pt-1 border-t border-white/5 space-y-0.5">
+                {plusStats.physicalDamage > 0 && (
+                  <div className="flex justify-between text-amber-300 text-[10px]">
+                    <span>⚔️ Saldırı Gücü:</span>
+                    <span>+{plusStats.physicalDamage}</span>
+                  </div>
+                )}
+                {plusStats.magicDamage > 0 && (
+                  <div className="flex justify-between text-cyan-300 text-[10px]">
+                    <span>✨ Büyülü Saldırı:</span>
+                    <span>+{plusStats.magicDamage}</span>
+                  </div>
+                )}
+                {plusStats.defense > 0 && (
+                  <div className="flex justify-between text-emerald-300 text-[10px]">
+                    <span>🛡️ Zırh / Savunma:</span>
+                    <span>+{plusStats.defense}</span>
+                  </div>
+                )}
+                {plusStats.hp > 0 && (
+                  <div className="flex justify-between text-rose-300 text-[10px]">
+                    <span>❤️ Maksimum Can:</span>
+                    <span>+{plusStats.hp} HP</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 

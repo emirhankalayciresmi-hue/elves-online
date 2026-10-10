@@ -315,6 +315,8 @@ export default function CharacterTab({
                 const Icon = SLOT_ICONS[slot.id] || Shield;
                 const equippedItem = player?.equipped?.[slot.id] || null;
                 const isSelected = selectedSlotId === slot.id;
+                const plusLevel = Number(equippedItem?.plusLevel) || 0;
+                const auraClass = equippedItem && plusLevel === 7 ? 'aura-electric-plus7' : equippedItem && plusLevel === 8 ? 'aura-electric-plus8' : equippedItem && plusLevel >= 9 ? 'aura-electric-plus9' : '';
 
                 return (
                   <div
@@ -357,7 +359,7 @@ export default function CharacterTab({
                         ? `${equippedItem.name} (Çift tıkla: Çıkar • Sağ tık: Menü)`
                         : `${slot.name} (${slot.slotHint || 'Boş'})`
                     }
-                    className={`w-full aspect-square rounded-xl border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${
+                    className={`w-full aspect-square rounded-xl border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${auraClass} ${
                       isSelected
                         ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400/80 scale-[1.03]'
                         : equippedItem
@@ -370,6 +372,23 @@ export default function CharacterTab({
                       {i + 1}
                     </span>
 
+                    {/* Ekipman Yükseltme Rozeti (+0 .. +9) */}
+                    {equippedItem && (
+                      <span
+                        className={`absolute bottom-1 right-1 font-mono text-[9px] font-black rounded px-1.5 py-0 select-none z-10 border ${
+                          plusLevel === 7
+                            ? 'text-blue-300 bg-blue-950/95 border-blue-400 shadow-[0_0_8px_rgba(37,99,235,0.9)]'
+                            : plusLevel === 8
+                            ? 'text-purple-300 bg-purple-950/95 border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.95)]'
+                            : plusLevel >= 9
+                            ? 'text-rose-200 bg-rose-950/95 border-red-500 shadow-[0_0_12px_rgba(239,68,68,1)]'
+                            : 'text-amber-200 bg-black/90 border-amber-500/70 shadow-[0_0_6px_rgba(0,0,0,0.9)]'
+                        }`}
+                      >
+                        +{plusLevel}
+                      </span>
+                    )}
+
                     {equippedItem ? (
                       <div className="flex flex-col items-center justify-center w-full h-full">
                         <img
@@ -377,8 +396,13 @@ export default function CharacterTab({
                           alt={equippedItem.name}
                           className="w-10 h-10 sm:w-11 sm:h-11 object-contain drop-shadow transition-transform group-hover:scale-110"
                         />
-                        <span className="text-[9px] font-cinzel text-amber-100 text-center line-clamp-1 w-full px-0.5 mt-0.5 font-bold">
-                          {equippedItem.name}
+                        <span className={`text-[9px] font-cinzel text-center line-clamp-1 w-full px-0.5 mt-0.5 font-bold ${
+                          plusLevel === 7 ? 'text-blue-300' :
+                          plusLevel === 8 ? 'text-purple-300' :
+                          plusLevel >= 9 ? 'text-rose-300' :
+                          'text-amber-100'
+                        }`}>
+                          {equippedItem.name}{plusLevel > 0 ? ` +${plusLevel}` : ''}
                         </span>
                       </div>
                     ) : (

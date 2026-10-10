@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg_claw" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#3b0d14"/>
+      <stop offset="70%" stop-color="#180407"/>
+      <stop offset="100%" stop-color="#020406"/>
+    </radialGradient>
+    <linearGradient id="grad_claw" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f87171"/>
+      <stop offset="35%" stop-color="#ef4444"/>
+      <stop offset="75%" stop-color="#991b1b"/>
+      <stop offset="100%" stop-color="#450a0a"/>
+    </linearGradient>
+    <linearGradient id="grad_bone" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef2f2"/>
+      <stop offset="50%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </linearGradient>
+    <filter id="glow_claw" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="256" height="256" rx="20" fill="url(#bg_claw)"/>
+  <rect x="8" y="8" width="240" height="240" rx="14" fill="none" stroke="#ef4444" stroke-width="2" stroke-opacity="0.4"/>
+  <rect x="14" y="14" width="228" height="228" rx="10" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-opacity="0.5"/>
+
+  <!-- 3 Ferocious Moon Wolf Claws -->
+  <g filter="url(#glow_claw)" transform="translate(128, 138)">
+    <!-- Base Paw Joint -->
+    <ellipse cx="0" cy="50" rx="55" ry="25" fill="#450a0a" stroke="#b91c1c" stroke-width="3"/>
+    <ellipse cx="0" cy="48" rx="45" ry="18" fill="#7f1d1d"/>
+
+    <!-- Left Claw -->
+    <path d="M -45 42 Q -65 -10 -40 -65 Q -32 -20 -28 40 Z" fill="url(#grad_bone)" stroke="#dc2626" stroke-width="2"/>
+    <path d="M -45 42 Q -65 -10 -40 -65 Q -48 10 -45 42 Z" fill="#cbd5e1" opacity="0.6"/>
+
+    <!-- Right Claw -->
+    <path d="M 45 42 Q 65 -10 40 -65 Q 32 -20 28 40 Z" fill="url(#grad_bone)" stroke="#dc2626" stroke-width="2"/>
+    <path d="M 45 42 Q 65 -10 40 -65 Q 48 10 45 42 Z" fill="#94a3b8" opacity="0.6"/>
+
+    <!-- Center Main Razor Claw -->
+    <path d="M -15 45 Q -25 -25 0 -85 Q 25 -25 15 45 Z" fill="url(#grad_bone)" stroke="#ef4444" stroke-width="2.5"/>
+    <path d="M -15 45 Q -25 -25 0 -85 Q -5 -10 -15 45 Z" fill="#ffffff" opacity="0.8"/>
+
+    <!-- Mystic Red Lunar Runes on Center Claw -->
+    <circle cx="0" cy="-35" r="4" fill="#ef4444"/>
+    <circle cx="0" cy="-15" r="3" fill="#f87171"/>
+    <circle cx="0" cy="5" r="2.5" fill="#fca5a5"/>
+  </g>
+</svg>

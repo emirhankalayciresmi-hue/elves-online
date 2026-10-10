@@ -553,7 +553,164 @@ export const ITEMS_DATABASE = [
 
 // Eşya ID'sine göre arama
 export function getItemById(id) {
+  if (UPGRADE_ITEMS[id]) return UPGRADE_ITEMS[id];
   return ITEMS_DATABASE.find((item) => item.id === id) || null;
+}
+
+// -------------------------------------------------------------
+// 🔨 YÜKSELTME VE GELİŞTİRME SİSTEMİ (+0 -> +9) VERİLERİ
+// -------------------------------------------------------------
+
+export const UPGRADE_ITEMS = {
+  upgrade_stone: {
+    id: 'upgrade_stone',
+    name: 'Kadim Yükseltme Taşı',
+    type: 'material',
+    isMaterial: true,
+    isUpgradeStone: true,
+    image: '/assets/items/upgrade_stone.svg',
+    sellPrice: 250,
+    desc: 'Kadim elf ocaklarının kutsal taşı. Demircide ekipmanları +1 ile +9 seviyelerine yükseltmek için kullanılır.',
+    rarity: 'rare',
+  },
+  claw_moonwolf: {
+    id: 'claw_moonwolf',
+    name: 'Ay Kurdu Pençesi',
+    type: 'material',
+    isMaterial: true,
+    classId: 'warrior',
+    className: 'Savaşçı',
+    image: '/assets/items/claw_moonwolf.svg',
+    sellPrice: 500,
+    desc: '1-10 seviye zindan kurtlarından düşer. Savaşçı ekipmanlarını +7, +8 ve +9 seviyelerine yükseltmek için demircide kullanılır.',
+    rarity: 'epic',
+  },
+  silk_shadowspider: {
+    id: 'silk_shadowspider',
+    name: 'Gölge Örümceği İpeği',
+    type: 'material',
+    isMaterial: true,
+    classId: 'ninja',
+    className: 'Ninja',
+    image: '/assets/items/silk_shadowspider.svg',
+    sellPrice: 500,
+    desc: '1-10 seviye zindan gölge örümceklerinden düşer. Ninja ekipmanlarını +7, +8 ve +9 seviyelerine yükseltmek için demircide kullanılır.',
+    rarity: 'epic',
+  },
+  crystal_arcane: {
+    id: 'crystal_arcane',
+    name: 'Arkanik Ruh Kristali',
+    type: 'material',
+    isMaterial: true,
+    classId: 'mage',
+    className: 'Büyücü',
+    image: '/assets/items/crystal_arcane.svg',
+    sellPrice: 500,
+    desc: '1-10 seviye zindan arkanik varlıklarından düşer. Büyücü ekipmanlarını +7, +8 ve +9 seviyelerine yükseltmek için demircide kullanılır.',
+    rarity: 'epic',
+  },
+};
+
+/**
+ * +1'den +9'a Yükseltme Maliyetleri ve Başarı Oranları (Orta Zorluk Kalibrasyonu)
+ * +1..+6 arası yalnızca Yükseltme Taşı ve Altın ister.
+ * +7..+9 arası 10x, 15x, 20x Yükseltme Taşı + Sınıf Malzemesi + Yüksek Altın ister.
+ */
+export const UPGRADE_CONFIG = {
+  1: { targetPlus: 1, rate: 95, stones: 1, gold: 1000, classMats: 0 },
+  2: { targetPlus: 2, rate: 90, stones: 2, gold: 2000, classMats: 0 },
+  3: { targetPlus: 3, rate: 85, stones: 3, gold: 3500, classMats: 0 },
+  4: { targetPlus: 4, rate: 75, stones: 4, gold: 5000, classMats: 0 },
+  5: { targetPlus: 5, rate: 65, stones: 5, gold: 8000, classMats: 0 },
+  6: { targetPlus: 6, rate: 50, stones: 6, gold: 12000, classMats: 0 },
+  7: { targetPlus: 7, rate: 40, stones: 10, gold: 25000, classMats: 10 },
+  8: { targetPlus: 8, rate: 30, stones: 15, gold: 50000, classMats: 15 },
+  9: { targetPlus: 9, rate: 20, stones: 20, gold: 100000, classMats: 20 },
+};
+
+/**
+ * Ekipmanın veya karakterin sınıfına göre +7..+9 için gereken sınıf malzemesini döner.
+ */
+export function getRequiredClassMaterial(item, player) {
+  const itemClass = (item?.classId || item?.className || '').toLowerCase();
+  if (itemClass.includes('warrior') || itemClass.includes('savaşçı')) {
+    return UPGRADE_ITEMS.claw_moonwolf;
+  }
+  if (itemClass.includes('ninja') || itemClass.includes('assassin')) {
+    return UPGRADE_ITEMS.silk_shadowspider;
+  }
+  if (itemClass.includes('mage') || itemClass.includes('büyücü')) {
+    return UPGRADE_ITEMS.crystal_arcane;
+  }
+
+  // Ortak takılar için yükselten oyuncunun sınıfı belirler
+  const playerClass = (player?.classId || player?.className || '').toLowerCase();
+  if (playerClass.includes('ninja') || playerClass.includes('assassin')) {
+    return UPGRADE_ITEMS.silk_shadowspider;
+  }
+  if (playerClass.includes('mage') || playerClass.includes('büyücü')) {
+    return UPGRADE_ITEMS.crystal_arcane;
+  }
+  return UPGRADE_ITEMS.claw_moonwolf;
+}
+
+/**
+ * Yeni bir yükseltme malzemesi nesnesi oluşturur (Envantere yığın olarak eklenir).
+ */
+export function createUpgradeMaterialItem(materialKey, count = 1) {
+  const template = UPGRADE_ITEMS[materialKey] || UPGRADE_ITEMS.upgrade_stone;
+  return {
+    ...template,
+    instanceId: `${template.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    count: Math.min(200, Math.max(1, count)),
+    isMaterial: true,
+  };
+}
+
+/**
+ * Eşyanın + seviyesine göre sağladığı ek özellikleri hesaplar.
+ * Silah, Yan El, Yüzükler ve Kolye -> Saldırı ve Büyülü Saldırı verir (kademe başı 10-15)
+ * Miğfer, Zırh, Eldiven, Çizme -> Zırh / Savunma verir (kademe başı 10-15)
+ * Kemer, Kanat, Pelerin -> Can (HP) ve ek stat verir
+ */
+export function calculateItemPlusStats(item) {
+  if (!item) return { physicalDamage: 0, magicDamage: 0, defense: 0, hp: 0 };
+  const plus = Number(item.plusLevel) || 0;
+  if (plus <= 0) return { physicalDamage: 0, magicDamage: 0, defense: 0, hp: 0 };
+
+  const slot = (item.slot || '').toLowerCase();
+  const isAttackSlot = slot === 'weapon' || slot === 'offhand' || slot === 'ring1' || slot === 'ring2' || slot === 'necklace';
+  const isUtilitySlot = slot === 'belt' || slot === 'wings' || slot === 'cloak';
+  const isDefenseSlot = !isAttackSlot && !isUtilitySlot;
+
+  // Kademe başı 12 birim temel artış (+9'da yaklaşık +110 stat)
+  const tierValue = plus * 12;
+
+  if (isAttackSlot) {
+    return {
+      physicalDamage: tierValue,
+      magicDamage: tierValue,
+      defense: 0,
+      hp: 0,
+    };
+  }
+
+  if (isDefenseSlot) {
+    return {
+      physicalDamage: 0,
+      magicDamage: 0,
+      defense: tierValue,
+      hp: 0,
+    };
+  }
+
+  // Kemer, Kanat, Pelerin (Can & Özellik)
+  return {
+    physicalDamage: 0,
+    magicDamage: 0,
+    defense: 0,
+    hp: plus * 60,
+  };
 }
 
 // Zindan 1 (1-5) ve Zindan 2 (6-10) Ganimet Düşme Mantığı
@@ -567,9 +724,10 @@ export function rollDungeonEquipmentDrops(dungeonId = 1, playerClassId = 'warrio
 
   if (!randomItem) return [];
 
-  // Benzersiz tekil kopya oluştur
+  // Benzersiz tekil kopya oluştur (+0 olarak başlar)
   return [{
     ...randomItem,
+    plusLevel: 0,
     instanceId: `${randomItem.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     droppedAt: new Date().toISOString(),
   }];
@@ -583,7 +741,7 @@ export function rollDungeonEquipmentDrops(dungeonId = 1, playerClassId = 'warrio
 export function isItemForPlayerClass(item, player) {
   if (!item) return false;
   // Maden, cevher, iksir veya genel materyallerde sınıf kısıtlaması yoktur
-  if (item.isOre || item.type === 'ore' || item.type === 'potion') return true;
+  if (item.isOre || item.type === 'ore' || item.type === 'potion' || item.isMaterial || item.type === 'material') return true;
   if (!item.classId && !item.className && !item.setKey) return true;
 
   const playerClass = (player?.classId || '').toLowerCase();
@@ -643,7 +801,7 @@ export function isItemForPlayerClass(item, player) {
  */
 export function isItemForSlot(item, slotId) {
   if (!item || !slotId) return false;
-  if (item.isOre || item.type === 'ore') return false;
+  if (item.isOre || item.type === 'ore' || item.isMaterial || item.type === 'material') return false;
 
   // Yüzük 1 ve Yüzük 2 yuvaları birbirinin eşyalarını da kabul edebilir
   if (slotId === 'ring1' || slotId === 'ring2') {

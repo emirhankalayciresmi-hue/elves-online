@@ -3,7 +3,13 @@
 // Pure Domain Logic: Zero React / UI or network dependencies.
 
 import { calculateLevelAndExp, rollDungeonReward, DUNGEON_GROUPS } from '@/core/config/dungeonData';
-import { rollDungeonEquipmentDrops, isItemForPlayerClass } from '@/core/config/itemsData';
+import {
+  rollDungeonEquipmentDrops,
+  isItemForPlayerClass,
+  UPGRADE_CONFIG,
+  getRequiredClassMaterial,
+  createUpgradeMaterialItem,
+} from '@/core/config/itemsData';
 import { ELVEN_MINES, MINING_DURATION_SECONDS, rollMiningRewards, createOreItem } from '@/core/config/miningData';
 import {
   ensurePlayerQuestState,
@@ -200,18 +206,49 @@ export function processDungeonCombatTick(player) {
 
   const levelRes = calculateLevelAndExp(player.level, player.exp, expGain, player.gold, goldGain);
 
-  // 6. Eşya Düşme Şansı (Tüm canavarlar ve bosslar istisnasız sabit %3 - Taviz yok)
-  const dropChance = 0.03;
+  // 6. Eşya & Yükseltme Malzemeleri Düşme Şansı
+  let updatedInventory = Array.isArray(player.inventory) ? [...player.inventory] : [];
   let newDroppedItem = null;
+  let droppedMatName = null;
+
+  // 6a. Ekipman Düşme Şansı (Tüm canavarlar ve bosslar istisnasız sabit %3)
+  const dropChance = 0.03;
   if (Math.random() < dropChance) {
     const drops = rollDungeonEquipmentDrops(dungeon.dungeonId || dungeon.id, player.classId || 'warrior');
     if (drops.length > 0) {
       newDroppedItem = drops[0];
+      updatedInventory.push(newDroppedItem);
     }
   }
 
-  const currentInventory = Array.isArray(player.inventory) ? player.inventory : [];
-  const updatedInventory = newDroppedItem ? [...currentInventory, newDroppedItem] : currentInventory;
+  // 6b. Kadim Yükseltme Taşı (Boss'ta %100, Normal Canavarda %18 şans)
+  const stoneDropChance = isBoss ? 1.0 : 0.18;
+  if (Math.random() < stoneDropChance) {
+    const stoneItem = createUpgradeMaterialItem('upgrade_stone', isBoss ? (Math.random() < 0.5 ? 2 : 1) : 1);
+    updatedInventory = addItemToInventory(updatedInventory, stoneItem, 200);
+    droppedMatName = stoneItem.name;
+  }
+
+  // 6c. Sınıf Yükseltme Malzemeleri (1-10 Seviye Zindanları: Ay Kurdu Pençesi, Gölge İpeği, Arkanik Kristal)
+  // Boss'ta %100, Normal canavarda %15 şans
+  if (dungeonTier <= 2) {
+    const classMatDropChance = isBoss ? 1.0 : 0.15;
+    if (Math.random() < classMatDropChance) {
+      let matKey = 'claw_moonwolf';
+      const mName = (monster.name || '').toLowerCase();
+      if (mName.includes('kurt') || mName.includes('goblin') || mName.includes('cüce')) {
+        matKey = 'claw_moonwolf';
+      } else if (mName.includes('örümcek') || mName.includes('gölge')) {
+        matKey = 'silk_shadowspider';
+      } else {
+        matKey = 'crystal_arcane';
+      }
+      const classMatItem = createUpgradeMaterialItem(matKey, isBoss ? (Math.random() < 0.5 ? 2 : 1) : 1);
+      updatedInventory = addItemToInventory(updatedInventory, classMatItem, 200);
+      droppedMatName = droppedMatName ? `${droppedMatName}, ${classMatItem.name}` : classMatItem.name;
+    }
+  }
+
   const currentNewDrops = Array.isArray(player.newDungeonDrops) ? player.newDungeonDrops : [];
   const updatedNewDrops = newDroppedItem ? [...currentNewDrops, newDroppedItem.instanceId] : currentNewDrops;
 
@@ -231,7 +268,7 @@ export function processDungeonCombatTick(player) {
     damageTaken,
     isDodged,
     potionUsed,
-    droppedItemName: newDroppedItem?.name || null,
+    droppedItemName: newDroppedItem?.name || droppedMatName || null,
     timestamp: Date.now(),
   };
 
@@ -776,4 +813,163 @@ export function discardOrSellItem(player, instanceId, sellPrice = 0, amountToSel
   }
 
   return updated;
+}
+
+/**
+ * Envanterden Belirli Miktarda Malzeme Tüketir (Yığın Azaltma / Yuva Silme)
+ */
+export function consumeMaterialFromInventory(inventory = [], itemId, amount = 1) {
+  let remainingToConsume = amount;
+  const newInventory = [];
+
+  for (const item of inventory) {
+    if (!item) continue;
+    if (item.id === itemId && remainingToConsume > 0) {
+      const currentCount = Number(item.count) > 0 ? Number(item.count) : 1;
+      if (currentCount <= remainingToConsume) {
+        remainingToConsume -= currentCount;
+      } else {
+        newInventory.push({
+          ...item,
+          count: currentCount - remainingToConsume,
+        });
+        remainingToConsume = 0;
+      }
+    } else {
+      newInventory.push(item);
+    }
+  }
+
+  return { inventory: newInventory, success: remainingToConsume === 0 };
+}
+
+/**
+ * 🔨 DEMİRCİ / EKİPMAN YÜKSELTME SİSTEMİ (+0 -> +9)
+ * +1..+6 arası yalnızca Kadim Yükseltme Taşı ve Altın ister.
+ * +7..+9 arası Kadim Yükseltme Taşı + İlgili Sınıf Malzemesi + Altın ister.
+ * BAŞARISIZ OLURSA: Eşya +0 seviyesine geriler!
+ */
+export function upgradeEquipment(player, instanceId) {
+  if (!player || !instanceId) {
+    return { success: false, error: 'Geçersiz eşya veya oyuncu verisi!' };
+  }
+
+  const currentInventory = Array.isArray(player.inventory) ? [...player.inventory] : [];
+  const itemIndex = currentInventory.findIndex((it) => it.instanceId === instanceId);
+
+  if (itemIndex === -1) {
+    return { success: false, error: 'Eşya envanterinizde bulunamadı!' };
+  }
+
+  const targetItem = currentInventory[itemIndex];
+  if (targetItem.isOre || targetItem.type === 'ore' || targetItem.isMaterial || targetItem.type === 'material') {
+    return { success: false, error: 'Yalnızca kuşanılabilir ekipmanlar yükseltilebilir!' };
+  }
+
+  const currentPlus = Number(targetItem.plusLevel) || 0;
+  if (currentPlus >= 9) {
+    return { success: false, error: 'Bu ekipman zaten azami +9 seviyesindedir!' };
+  }
+
+  const nextPlus = currentPlus + 1;
+  const config = UPGRADE_CONFIG[nextPlus];
+  if (!config) {
+    return { success: false, error: 'Yükseltme formülü bulunamadı!' };
+  }
+
+  // 1. Altın Kontrolü
+  if ((player.gold || 0) < config.gold) {
+    return {
+      success: false,
+      error: `Yetersiz Altın! Gereken: ${config.gold.toLocaleString('tr-TR')} Altın, Mevcut: ${(player.gold || 0).toLocaleString('tr-TR')} Altın`,
+    };
+  }
+
+  // 2. Kadim Yükseltme Taşı Kontrolü
+  const totalStones = currentInventory
+    .filter((it) => it.id === 'upgrade_stone')
+    .reduce((acc, cur) => acc + (Number(cur.count) || 1), 0);
+
+  if (totalStones < config.stones) {
+    return {
+      success: false,
+      error: `Yetersiz Kadim Yükseltme Taşı! Gereken: ${config.stones} Adet, Çantanızda: ${totalStones} Adet`,
+    };
+  }
+
+  // 3. Sınıf Malzemesi Kontrolü (+7, +8, +9)
+  let reqClassMat = null;
+  if (config.classMats > 0) {
+    reqClassMat = getRequiredClassMaterial(targetItem, player);
+    const totalClassMats = currentInventory
+      .filter((it) => it.id === reqClassMat.id)
+      .reduce((acc, cur) => acc + (Number(cur.count) || 1), 0);
+
+    if (totalClassMats < config.classMats) {
+      return {
+        success: false,
+        error: `Yetersiz ${reqClassMat.name}! Gereken: ${config.classMats} Adet, Çantanızda: ${totalClassMats} Adet`,
+      };
+    }
+  }
+
+  // Malzemeleri ve Altını Tüket
+  let updatedInv = currentInventory;
+  const stoneRes = consumeMaterialFromInventory(updatedInv, 'upgrade_stone', config.stones);
+  updatedInv = stoneRes.inventory;
+
+  if (config.classMats > 0 && reqClassMat) {
+    const matRes = consumeMaterialFromInventory(updatedInv, reqClassMat.id, config.classMats);
+    updatedInv = matRes.inventory;
+  }
+
+  const newGold = Math.max(0, (player.gold || 0) - config.gold);
+
+  // Başarı Oranı Çekilişi (% şans)
+  const roll = Math.random() * 100;
+  const isSuccess = roll < config.rate;
+
+  let finalItem;
+  let resultMessage;
+
+  // Hedef eşyanın yeni kopyasını bul
+  const finalItemIdx = updatedInv.findIndex((it) => it.instanceId === instanceId);
+
+  if (isSuccess) {
+    finalItem = {
+      ...targetItem,
+      plusLevel: nextPlus,
+    };
+    resultMessage = `✨ [BAŞARILI] Demirci çekicini ustalıkla vurdu! "${targetItem.name}" başarıyla +${nextPlus} oldu!`;
+  } else {
+    // KULLANICI KURALI: "eşya başarısız olursa +0a düşsün"
+    finalItem = {
+      ...targetItem,
+      plusLevel: 0,
+    };
+    resultMessage = `💥 [BAŞARISIZ] Demirci çeliği soğuturken çatlak oluştu! "${targetItem.name}" +0 seviyesine geriledi.`;
+  }
+
+  if (finalItemIdx !== -1) {
+    updatedInv[finalItemIdx] = finalItem;
+  } else {
+    updatedInv.push(finalItem);
+  }
+
+  const updatedPlayer = {
+    ...player,
+    gold: newGold,
+    inventory: updatedInv,
+  };
+
+  return {
+    success: true,
+    isUpgradeSuccess: isSuccess,
+    player: updatedPlayer,
+    upgradedItem: finalItem,
+    previousLevel: currentPlus,
+    newLevel: isSuccess ? nextPlus : 0,
+    message: resultMessage,
+    rate: config.rate,
+  };
 }

@@ -180,6 +180,10 @@ export default function Metin2Inventory({
             const isClassLocked = Boolean(item && !isItemForPlayerClass(item, player));
             const absoluteSlotIndex = startIndex + idx;
 
+            const isEquip = Boolean(item && !item.isOre && item.type !== 'ore' && !item.isMaterial && item.type !== 'material' && item.type !== 'potion' && (item.slot || item.setKey || item.slotName));
+            const plusLevel = isEquip ? (Number(item.plusLevel) || 0) : 0;
+            const auraClass = isEquip && plusLevel === 7 ? 'aura-electric-plus7' : isEquip && plusLevel === 8 ? 'aura-electric-plus8' : isEquip && plusLevel >= 9 ? 'aura-electric-plus9' : '';
+
             return (
               <div
                 key={idx}
@@ -213,7 +217,7 @@ export default function Metin2Inventory({
                 }}
                 onDoubleClick={() => {
                   if (!item) return;
-                  if (item.isOre || item.type === 'ore') {
+                  if (item.isOre || item.type === 'ore' || item.isMaterial || item.type === 'material') {
                     setPinnedItem((prev) => (prev?.instanceId === item.instanceId ? null : item));
                   } else if (!isClassLocked) {
                     onEquipItem?.(item);
@@ -221,7 +225,7 @@ export default function Metin2Inventory({
                 }}
                 onTouchStart={() => handleTouchStart(item)}
                 onTouchEnd={handleTouchEnd}
-                className={`w-full aspect-square max-w-[100px] max-h-[100px] mx-auto rounded-lg border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${
+                className={`w-full aspect-square max-w-[100px] max-h-[100px] mx-auto rounded-lg border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${auraClass} ${
                   isNewDrop
                     ? 'border-2 border-yellow-400 ring-2 ring-amber-300 bg-amber-500/25 shadow-[0_0_18px_rgba(250,204,21,0.9)] animate-pulse scale-[1.03]'
                     : isPinned
@@ -267,8 +271,32 @@ export default function Metin2Inventory({
                   </span>
                 )}
 
+                {/* Material Distinction Badge */}
+                {!isNewDrop && !isClassLocked && (item?.isMaterial || item?.type === 'material') && (
+                  <span className="absolute top-1 right-1 text-[7px] font-mono font-bold text-indigo-300 bg-indigo-950/95 border border-indigo-500/50 rounded px-1 py-0.2 shadow">
+                    🔮 Materyal
+                  </span>
+                )}
+
+                {/* Ekipman Yükseltme Rozeti (+0 .. +9) */}
+                {isEquip && (
+                  <span
+                    className={`absolute bottom-1 right-1 font-mono text-[9px] font-black rounded px-1.5 py-0 select-none z-10 border ${
+                      plusLevel === 7
+                        ? 'text-blue-300 bg-blue-950/95 border-blue-400 shadow-[0_0_8px_rgba(37,99,235,0.9)]'
+                        : plusLevel === 8
+                        ? 'text-purple-300 bg-purple-950/95 border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.95)]'
+                        : plusLevel >= 9
+                        ? 'text-rose-200 bg-rose-950/95 border-red-500 shadow-[0_0_12px_rgba(239,68,68,1)]'
+                        : 'text-amber-200 bg-black/90 border-amber-500/70 shadow-[0_0_6px_rgba(0,0,0,0.9)]'
+                    }`}
+                  >
+                    +{plusLevel}
+                  </span>
+                )}
+
                 {/* Metin2 Yığın Sayacı (Maks 200 Adet) - 1, 2, 3, 4, 5... 200 */}
-                {item && ((item.isOre || item.type === 'ore') || (Number(item.count) || 1) > 1) && (
+                {item && !isEquip && ((item.isOre || item.type === 'ore' || item.isMaterial || item.type === 'material') || (Number(item.count) || 1) > 1) && (
                   <span className="absolute bottom-1 right-1 font-mono text-[10px] font-black text-amber-200 bg-black/95 border border-amber-500/80 rounded px-1.5 py-0 shadow-[0_0_8px_rgba(0,0,0,0.95)] z-10 select-none">
                     {item.count || 1}
                   </span>
@@ -288,9 +316,15 @@ export default function Metin2Inventory({
                         ? 'text-rose-300/80 font-medium'
                         : item.isOre || item.type === 'ore'
                         ? 'text-emerald-200 font-semibold'
+                        : isEquip && plusLevel === 7
+                        ? 'text-blue-300 font-bold'
+                        : isEquip && plusLevel === 8
+                        ? 'text-purple-300 font-bold'
+                        : isEquip && plusLevel >= 9
+                        ? 'text-rose-300 font-black'
                         : 'text-amber-100'
                     }`}>
-                      {item.name}
+                      {item.name}{isEquip && plusLevel > 0 ? ` +${plusLevel}` : ''}
                     </span>
                   </div>
                 ) : (

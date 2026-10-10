@@ -111,3 +111,52 @@
 .animate-shimmer {
   animation: subtle-shimmer 3s infinite ease-in-out;
 }
+
+/* ========================================================
+   ⚡ METİN2 TARZI ELEKTRİKLİ PARLAMA AURASI (+7, +8, +9)
+   ======================================================== */
+
+@keyframes electric-blue-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.7), inset 0 0 8px rgba(59, 130, 246, 0.4);
+    border-color: rgba(96, 165, 250, 0.85);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(29, 78, 216, 0.95), 0 0 28px rgba(37, 99, 235, 0.6), inset 0 0 12px rgba(96, 165, 250, 0.7);
+    border-color: rgba(191, 219, 254, 1);
+  }
+}
+
+@keyframes electric-purple-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.75), inset 0 0 9px rgba(192, 132, 252, 0.45);
+    border-color: rgba(192, 132, 252, 0.85);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(147, 51, 234, 1), 0 0 32px rgba(168, 85, 247, 0.7), inset 0 0 14px rgba(216, 180, 254, 0.8);
+    border-color: rgba(243, 232, 255, 1);
+  }
+}
+
+@keyframes electric-red-pulse {
+  0%, 100% {
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.85), inset 0 0 10px rgba(248, 113, 113, 0.5);
+    border-color: rgba(248, 113, 113, 0.9);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(220, 38, 38, 1), 0 0 38px rgba(239, 68, 68, 0.85), inset 0 0 16px rgba(254, 202, 202, 0.9);
+    border-color: rgba(254, 226, 226, 1);
+  }
+}
+
+.aura-electric-plus7 {
+  animation: electric-blue-pulse 2s infinite ease-in-out !important;
+}
+
+.aura-electric-plus8 {
+  animation: electric-purple-pulse 1.7s infinite ease-in-out !important;
+}
+
+.aura-electric-plus9 {
+  animation: electric-red-pulse 1.4s infinite ease-in-out !important;
+}

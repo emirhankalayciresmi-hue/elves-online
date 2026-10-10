@@ -156,107 +156,131 @@ export default function InventoryTab({
                 const equippedItem = equipped[slot.id] || null;
                 const isHovered = hoveredEquipped?.instanceId === equippedItem?.instanceId && equippedItem;
                 const isPinned = pinnedEquipped?.instanceId === equippedItem?.instanceId && equippedItem;
+                const plusLevel = Number(equippedItem?.plusLevel) || 0;
+                const auraClass = equippedItem && plusLevel === 7 ? 'aura-electric-plus7' : equippedItem && plusLevel === 8 ? 'aura-electric-plus8' : equippedItem && plusLevel >= 9 ? 'aura-electric-plus9' : '';
 
                 return (
                   <div
                     key={slot.id}
                     onMouseEnter={(e) => {
-                      mousePosRef.current = { x: e.clientX, y: e.clientY };
-                      setEquipMousePos({ x: e.clientX, y: e.clientY });
-                      if (equippedItem) {
-                        setHoveredEquipped(equippedItem);
-                        setHoveredEmptySlot(null);
-                      } else {
-                        setHoveredEmptySlot(slot);
-                        setHoveredEquipped(null);
-                      }
-                    }}
-                    onMouseMove={updateEquipMousePos}
-                    onMouseLeave={() => {
-                      setHoveredEquipped(null);
-                      setHoveredEmptySlot(null);
-                    }}
-                    onClick={(e) => {
-                      if (contextMenu.isOpen) {
-                        setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: true, slotKey: null });
-                      }
-                      if (equippedItem) {
-                        const now = Date.now();
-                        if (now - lastEquipTap.time < 350 && lastEquipTap.slotId === slot.id) {
-                          onUnequipItem?.(slot.id);
-                          setPinnedEquipped(null);
+                          mousePosRef.current = { x: e.clientX, y: e.clientY };
+                          setEquipMousePos({ x: e.clientX, y: e.clientY });
+                          if (equippedItem) {
+                            setHoveredEquipped(equippedItem);
+                            setHoveredEmptySlot(null);
+                          } else {
+                            setHoveredEmptySlot(slot);
+                            setHoveredEquipped(null);
+                          }
+                        }}
+                        onMouseMove={updateEquipMousePos}
+                        onMouseLeave={() => {
                           setHoveredEquipped(null);
-                          setLastEquipTap({ time: 0, slotId: null });
-                          return;
-                        }
-                        setLastEquipTap({ time: now, slotId: slot.id });
-                        setEquipMousePos({ x: e.clientX, y: e.clientY });
-                        setPinnedEquipped((prev) =>
-                          prev?.instanceId === equippedItem.instanceId ? null : equippedItem
-                        );
-                      }
-                    }}
-                    onDoubleClick={() => {
-                      if (equippedItem) {
-                        onUnequipItem?.(slot.id);
-                        setPinnedEquipped(null);
-                        setHoveredEquipped(null);
-                      }
-                    }}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (equippedItem) {
-                        setContextMenu({
-                          isOpen: true,
-                          position: { x: e.clientX, y: e.clientY },
-                          item: equippedItem,
-                          isEquipped: true,
-                          slotKey: slot.id,
-                        });
-                      }
-                    }}
-                    className={`w-full aspect-square max-w-[96px] max-h-[96px] mx-auto rounded-lg border transition-all duration-200 flex flex-col items-center justify-center p-1 relative cursor-pointer group ${
-                      isPinned
-                        ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400 scale-[1.03]'
-                        : isHovered
-                        ? 'border-amber-300 bg-amber-500/15 ring-1 ring-amber-300 scale-[1.02]'
-                        : equippedItem
-                        ? 'border-amber-500/50 bg-black/60 hover:border-amber-300 hover:bg-black/80'
-                        : 'border-dashed border-amber-500/30 bg-black/40 hover:border-amber-400/70 hover:bg-white/5'
-                    }`}
-                  >
-                    {/* Yuva Numarası */}
-                    <span className="absolute top-1 left-1.5 text-[8px] font-mono text-slate-500 group-hover:text-amber-400 transition-colors">
-                      {i + 1}
-                    </span>
+                          setHoveredEmptySlot(null);
+                        }}
+                        onClick={(e) => {
+                          if (contextMenu.isOpen) {
+                            setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: true, slotKey: null });
+                          }
+                          if (equippedItem) {
+                            const now = Date.now();
+                            if (now - lastEquipTap.time < 350 && lastEquipTap.slotId === slot.id) {
+                              onUnequipItem?.(slot.id);
+                              setPinnedEquipped(null);
+                              setHoveredEquipped(null);
+                              setLastEquipTap({ time: 0, slotId: null });
+                              return;
+                            }
+                            setLastEquipTap({ time: now, slotId: slot.id });
+                            setEquipMousePos({ x: e.clientX, y: e.clientY });
+                            setPinnedEquipped((prev) =>
+                              prev?.instanceId === equippedItem.instanceId ? null : equippedItem
+                            );
+                          }
+                        }}
+                        onDoubleClick={() => {
+                          if (equippedItem) {
+                            onUnequipItem?.(slot.id);
+                            setPinnedEquipped(null);
+                            setHoveredEquipped(null);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (equippedItem) {
+                            setContextMenu({
+                              isOpen: true,
+                              position: { x: e.clientX, y: e.clientY },
+                              item: equippedItem,
+                              isEquipped: true,
+                              slotKey: slot.id,
+                            });
+                          }
+                        }}
+                        className={`w-full aspect-square max-w-[96px] max-h-[96px] mx-auto rounded-lg border transition-all duration-200 flex flex-col items-center justify-center p-1 relative cursor-pointer group ${auraClass} ${
+                          isPinned
+                            ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400 scale-[1.03]'
+                            : isHovered
+                            ? 'border-amber-300 bg-amber-500/15 ring-1 ring-amber-300 scale-[1.02]'
+                            : equippedItem
+                            ? 'border-amber-500/50 bg-black/60 hover:border-amber-300 hover:bg-black/80'
+                            : 'border-dashed border-amber-500/30 bg-black/40 hover:border-amber-400/70 hover:bg-white/5'
+                        }`}
+                      >
+                        {/* Yuva Numarası */}
+                        <span className="absolute top-1 left-1.5 text-[8px] font-mono text-slate-500 group-hover:text-amber-400 transition-colors">
+                          {i + 1}
+                        </span>
 
-                    {equippedItem ? (
-                      <div className="flex flex-col items-center justify-center w-full h-full">
-                        <img
-                          src={equippedItem.image}
-                          alt={equippedItem.name}
-                          className="w-10 h-10 sm:w-11 sm:h-11 object-contain drop-shadow transition-transform group-hover:scale-110"
-                        />
-                        <span className="text-[9px] font-cinzel text-amber-100 text-center line-clamp-1 w-full px-0.5 mt-0.5">
-                          {equippedItem.name}
-                        </span>
+                        {/* Ekipman Yükseltme Rozeti (+0 .. +9) */}
+                        {equippedItem && (
+                          <span
+                            className={`absolute bottom-1 right-1 font-mono text-[9px] font-black rounded px-1.5 py-0 select-none z-10 border ${
+                              plusLevel === 7
+                                ? 'text-blue-300 bg-blue-950/95 border-blue-400 shadow-[0_0_8px_rgba(37,99,235,0.9)]'
+                                : plusLevel === 8
+                                ? 'text-purple-300 bg-purple-950/95 border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.95)]'
+                                : plusLevel >= 9
+                                ? 'text-rose-200 bg-rose-950/95 border-red-500 shadow-[0_0_12px_rgba(239,68,68,1)]'
+                                : 'text-amber-200 bg-black/90 border-amber-500/70 shadow-[0_0_6px_rgba(0,0,0,0.9)]'
+                            }`}
+                          >
+                            +{plusLevel}
+                          </span>
+                        )}
+
+                        {equippedItem ? (
+                          <div className="flex flex-col items-center justify-center w-full h-full">
+                            <img
+                              src={equippedItem.image}
+                              alt={equippedItem.name}
+                              className="w-10 h-10 sm:w-11 sm:h-11 object-contain drop-shadow transition-transform group-hover:scale-110"
+                            />
+                            <span className={`text-[9px] font-cinzel text-center line-clamp-1 w-full px-0.5 mt-0.5 ${
+                              plusLevel === 7 ? 'text-blue-300 font-bold' :
+                              plusLevel === 8 ? 'text-purple-300 font-bold' :
+                              plusLevel >= 9 ? 'text-rose-300 font-black' :
+                              'text-amber-100'
+                            }`}>
+                              {equippedItem.name}{plusLevel > 0 ? ` +${plusLevel}` : ''}
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-900/90 border border-slate-700/80 flex items-center justify-center text-slate-400 mb-0.5 group-hover:text-amber-300 group-hover:border-amber-500/50 transition-all">
+                              <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                            </div>
+                            <span className="text-[9px] sm:text-[10px] font-cinzel text-amber-100 font-semibold line-clamp-1 group-hover:text-amber-200">
+                              {slot.name}
+                            </span>
+                            <span className="text-[8px] text-slate-500 font-mono">
+                              Boş
+                            </span>
+                          </>
+                        )}
                       </div>
-                    ) : (
-                      <>
-                        <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-900/90 border border-slate-700/80 flex items-center justify-center text-slate-400 mb-0.5 group-hover:text-amber-300 group-hover:border-amber-500/50 transition-all">
-                          <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        </div>
-                        <span className="text-[9px] sm:text-[10px] font-cinzel text-amber-100 font-semibold line-clamp-1 group-hover:text-amber-200">
-                          {slot.name}
-                        </span>
-                        <span className="text-[8px] text-slate-500 font-mono">
-                          Boş
-                        </span>
-                      </>
-                    )}
-                  </div>
-                );
+                    );
               })}
             </div>
 

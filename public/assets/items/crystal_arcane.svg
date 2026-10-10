@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <radialGradient id="bg_crystal" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#082f49"/>
+      <stop offset="70%" stop-color="#0c1d2e"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </radialGradient>
+    <linearGradient id="grad_crystal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="25%" stop-color="#7dd3fc"/>
+      <stop offset="65%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <filter id="glow_crystal" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="256" height="256" rx="20" fill="url(#bg_crystal)"/>
+  <rect x="8" y="8" width="240" height="240" rx="14" fill="none" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.4"/>
+  <rect x="14" y="14" width="228" height="228" rx="10" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-opacity="0.5"/>
+
+  <!-- Arcane Floating Shards and Main Crystal -->
+  <g filter="url(#glow_crystal)" transform="translate(128, 128)">
+    <!-- Small Left Orbiting Crystal Shard -->
+    <polygon points="-55,-20 -40,-45 -45,10" fill="#38bdf8" opacity="0.8"/>
+    <!-- Small Right Orbiting Crystal Shard -->
+    <polygon points="50,-35 65,-10 45,15" fill="#7dd3fc" opacity="0.8"/>
+    <!-- Bottom Orbiting Shard -->
+    <polygon points="-10,65 10,60 0,85" fill="#0ea5e9" opacity="0.7"/>
+
+    <!-- Main Arcane Crystal Core -->
+    <polygon points="0,-85 38,-30 42,40 0,80 -42,40 -38,-30" fill="url(#grad_crystal)" stroke="#ffffff" stroke-width="2"/>
+    <polygon points="0,-85 0,80 42,40 38,-30" fill="#0369a1" opacity="0.4"/>
+    <polygon points="0,-85 0,0 -38,-30" fill="#ffffff" opacity="0.5"/>
+
+    <!-- Arcane Core Light -->
+    <circle cx="0" cy="0" r="16" fill="#e0f2fe" opacity="0.95"/>
+    <circle cx="0" cy="0" r="8" fill="#ffffff"/>
+  </g>
+</svg>
