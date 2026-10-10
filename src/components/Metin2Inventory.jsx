@@ -212,7 +212,10 @@ export default function Metin2Inventory({
                   }
                 }}
                 onDoubleClick={() => {
-                  if (item && !isClassLocked) {
+                  if (!item) return;
+                  if (item.isOre || item.type === 'ore') {
+                    setPinnedItem((prev) => (prev?.instanceId === item.instanceId ? null : item));
+                  } else if (!isClassLocked) {
                     onEquipItem?.(item);
                   }
                 }}
