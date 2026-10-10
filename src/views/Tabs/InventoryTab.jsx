@@ -6,6 +6,7 @@ import {
 import OrnateFrame from '../../components/OrnateFrame';
 import Metin2Inventory from '../../components/Metin2Inventory';
 import Metin2ComparisonTooltip from '../../components/ItemTooltip';
+import ItemContextMenu from '../../components/ItemContextMenu';
 import { EQUIPMENT_SLOTS } from '../../config/gameData';
 
 const SLOT_ICONS = {
@@ -36,6 +37,14 @@ export default function InventoryTab({
   const [pinnedEquipped, setPinnedEquipped] = useState(null);
   const [hoveredEmptySlot, setHoveredEmptySlot] = useState(null);
   const [equipMousePos, setEquipMousePos] = useState({ x: 0, y: 0 });
+  const [lastEquipTap, setLastEquipTap] = useState({ time: 0, slotId: null });
+  const [contextMenu, setContextMenu] = useState({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    item: null,
+    isEquipped: true,
+    slotKey: null,
+  });
   const mousePosRef = useRef({ x: 0, y: 0 });
   const rafIdRef = useRef(null);
 
@@ -72,7 +81,14 @@ export default function InventoryTab({
   const displayedEquipped = pinnedEquipped || hoveredEquipped;
 
   return (
-    <div className={`space-y-4 pb-20 animate-fadeIn ${isPC ? 'w-full' : ''}`}>
+    <div
+      onClick={() => {
+        if (contextMenu.isOpen) {
+          setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: true, slotKey: null });
+        }
+      }}
+      className={`space-y-4 pb-20 animate-fadeIn ${isPC ? 'w-full' : ''}`}
+    >
       {/* Yeni Düşen Eşyalar Bildirimi */}
       {player?.newDungeonDrops?.length > 0 && (
         <div className="p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/50 flex items-center justify-between text-xs font-mono animate-fadeIn">
@@ -101,7 +117,7 @@ export default function InventoryTab({
                 Kuşam & Envanter Yönetimi
               </h2>
               <p className="text-[11px] text-slate-400 font-cormorant">
-                Ekipmanlarınızı kuşanmak için çantadaki eşyaya 2 kez tıklayın veya sürükleyin. Çıkarmak için kuşanılan eşyaya 2 kez tıklayın.
+                Ekipman kuşanmak için eşyaya 2 kez tıklayın veya sağ tık menüsünü açın. Çıkarmak için kuşanılan eşyaya 2 kez tıklayın veya sağ tıklayın.
               </p>
             </div>
           </div>
@@ -161,7 +177,19 @@ export default function InventoryTab({
                       setHoveredEmptySlot(null);
                     }}
                     onClick={(e) => {
+                      if (contextMenu.isOpen) {
+                        setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: true, slotKey: null });
+                      }
                       if (equippedItem) {
+                        const now = Date.now();
+                        if (now - lastEquipTap.time < 350 && lastEquipTap.slotId === slot.id) {
+                          onUnequipItem?.(slot.id);
+                          setPinnedEquipped(null);
+                          setHoveredEquipped(null);
+                          setLastEquipTap({ time: 0, slotId: null });
+                          return;
+                        }
+                        setLastEquipTap({ time: now, slotId: slot.id });
                         setEquipMousePos({ x: e.clientX, y: e.clientY });
                         setPinnedEquipped((prev) =>
                           prev?.instanceId === equippedItem.instanceId ? null : equippedItem
@@ -173,6 +201,19 @@ export default function InventoryTab({
                         onUnequipItem?.(slot.id);
                         setPinnedEquipped(null);
                         setHoveredEquipped(null);
+                      }
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (equippedItem) {
+                        setContextMenu({
+                          isOpen: true,
+                          position: { x: e.clientX, y: e.clientY },
+                          item: equippedItem,
+                          isEquipped: true,
+                          slotKey: slot.id,
+                        });
                       }
                     }}
                     className={`w-full aspect-square max-w-[96px] max-h-[96px] mx-auto rounded-lg border transition-all duration-200 flex flex-col items-center justify-center p-1 relative cursor-pointer group ${
@@ -287,6 +328,27 @@ export default function InventoryTab({
           />
         </div>
       </div>
+
+      {/* Özel MMORPG Sağ Tık Menüsü (Kuşanılan Eşyayı Çıkar) */}
+      <ItemContextMenu
+        isOpen={contextMenu.isOpen}
+        position={contextMenu.position}
+        item={contextMenu.item}
+        isEquipped={contextMenu.isEquipped}
+        slotKey={contextMenu.slotKey}
+        player={player}
+        onUnequip={(slotKey) => {
+          onUnequipItem?.(slotKey);
+          setPinnedEquipped(null);
+          setHoveredEquipped(null);
+        }}
+        onInspect={(item) => {
+          setPinnedEquipped(item);
+        }}
+        onClose={() => {
+          setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: true, slotKey: null });
+        }}
+      />
     </div>
   );
 }

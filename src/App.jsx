@@ -248,6 +248,17 @@ export default function App() {
     }
   }, [viewMode, player?.name]);
 
+  // Global tarayıcı sağ tık menüsünü engelle (Özel oyun içi MMORPG sağ tık menüleri için)
+  useEffect(() => {
+    const handleGlobalContextMenu = (e) => {
+      e.preventDefault();
+    };
+    window.addEventListener('contextmenu', handleGlobalContextMenu);
+    return () => {
+      window.removeEventListener('contextmenu', handleGlobalContextMenu);
+    };
+  }, []);
+
   const handleSendMessage = useCallback((newMsg) => {
     setChatMessages((prev) => {
       const updated = [...prev, newMsg];

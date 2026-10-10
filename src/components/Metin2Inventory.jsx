@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Package, ChevronLeft, ChevronRight, Layers, Sparkles, Lock } from 'lucide-react';
 import OrnateFrame from '@/components/OrnateFrame';
 import Metin2ComparisonTooltip from '@/components/ItemTooltip';
+import ItemContextMenu from '@/components/ItemContextMenu';
 import { isItemForPlayerClass } from '@/core/config/itemsData';
 
 export default function Metin2Inventory({
@@ -16,6 +17,11 @@ export default function Metin2Inventory({
   const [pinnedItem, setPinnedItem] = useState(null);
   const [lastTap, setLastTap] = useState({ time: 0, itemId: null });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [contextMenu, setContextMenu] = useState({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    item: null,
+  });
   const longPressTimerRef = useRef(null);
   const mousePosRef = useRef({ x: 0, y: 0 });
   const rafIdRef = useRef(null);
@@ -49,14 +55,12 @@ export default function Metin2Inventory({
   const startIndex = (activePage - 1) * SLOTS_PER_PAGE;
   const pageSlots = Array.from({ length: SLOTS_PER_PAGE }, (_, i) => inventory[startIndex + i] || null);
 
-  // Right-click on inventory container cycles to next page
-  const handleContextMenu = (e) => {
-    e.preventDefault();
-    setActivePage((prev) => (prev % TOTAL_PAGES) + 1);
-  };
-
   // Double-tap or double-click to directly equip
   const handleSlotClick = (item) => {
+    if (contextMenu.isOpen) {
+      setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null });
+    }
+
     if (!item) {
       setPinnedItem(null);
       return;
@@ -100,7 +104,11 @@ export default function Metin2Inventory({
 
   return (
     <div
-      onContextMenu={handleContextMenu}
+      onClick={() => {
+        if (contextMenu.isOpen) {
+          setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null });
+        }
+      }}
       className="space-y-3 relative select-none"
     >
       <OrnateFrame className="p-3.5 space-y-3">
@@ -160,7 +168,7 @@ export default function Metin2Inventory({
 
         <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 px-0.5">
           <span>Sayfa {activePage} / 3 (16 Yuva)</span>
-          <span className="text-amber-400/80">Sağ Tık: Sayfa Değiştir • 2x Tıkla: Kuşan</span>
+          <span className="text-amber-400/80">Sağ Tık: Menü (Kuşan/Sil) • 2x Tıkla: Kuşan</span>
         </div>
 
         {/* 16 Slots Grid (100x100 Boxes) */}
@@ -191,6 +199,17 @@ export default function Metin2Inventory({
                 onClick={(e) => {
                   if (item) setMousePos({ x: e.clientX, y: e.clientY });
                   handleSlotClick(item);
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (item) {
+                    setContextMenu({
+                      isOpen: true,
+                      position: { x: e.clientX, y: e.clientY },
+                      item,
+                    });
+                  }
                 }}
                 onDoubleClick={() => {
                   if (item && !isClassLocked) {
@@ -302,6 +321,29 @@ export default function Metin2Inventory({
           }}
         />
       )}
+
+      {/* Özel MMORPG Sağ Tık Menüsü (Kuşan / Sil / Sat) */}
+      <ItemContextMenu
+        isOpen={contextMenu.isOpen}
+        position={contextMenu.position}
+        item={contextMenu.item}
+        isEquipped={false}
+        player={player}
+        onEquip={(it) => {
+          if (isItemForPlayerClass(it, player)) {
+            onEquipItem?.(it);
+          }
+        }}
+        onDiscard={(instId, sellPrice) => {
+          onDiscardItem?.(instId, sellPrice);
+        }}
+        onInspect={(it) => {
+          setPinnedItem(it);
+        }}
+        onClose={() => {
+          setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null });
+        }}
+      />
     </div>
   );
 }

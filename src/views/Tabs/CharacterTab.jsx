@@ -7,6 +7,7 @@ import {
   Coins, Info, ArrowDownCircle, Check, ArrowRightLeft
 } from 'lucide-react';
 import OrnateFrame from '../../components/OrnateFrame';
+import ItemContextMenu from '../../components/ItemContextMenu';
 import {
   KINGDOMS,
   CLASSES,
@@ -46,6 +47,15 @@ export default function CharacterTab({
 
   const isPC = layoutMode === 'pc';
   const [selectedSlotId, setSelectedSlotId] = useState('weapon');
+  const [contextMenu, setContextMenu] = useState({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    item: null,
+    isEquipped: false,
+    slotKey: null,
+  });
+  const [lastEquipTap, setLastEquipTap] = useState({ time: 0, slotId: null });
+  const [lastCandidateTap, setLastCandidateTap] = useState({ time: 0, itemId: null });
 
   // Oyuncunun sınıf ve krallık detayları
   const currentKingdom = KINGDOMS.find(
@@ -92,7 +102,14 @@ export default function CharacterTab({
   );
 
   return (
-    <div className={`space-y-4 pb-20 animate-fadeIn ${isPC ? 'w-full' : ''}`}>
+    <div
+      onClick={() => {
+        if (contextMenu.isOpen) {
+          setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: false, slotKey: null });
+        }
+      }}
+      className={`space-y-4 pb-20 animate-fadeIn ${isPC ? 'w-full' : ''}`}
+    >
       {/* ======================================================== */}
       {/* 1. ÜST GENEL DURUM & OYUNCU ÖZ PANELİ (PC & MOBİL SENKRON) */}
       {/* ======================================================== */}
@@ -302,15 +319,42 @@ export default function CharacterTab({
                 return (
                   <div
                     key={slot.id}
-                    onClick={() => setSelectedSlotId(slot.id)}
+                    onClick={() => {
+                      if (contextMenu.isOpen) {
+                        setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: false, slotKey: null });
+                      }
+                      if (equippedItem) {
+                        const now = Date.now();
+                        if (now - lastEquipTap.time < 350 && lastEquipTap.slotId === slot.id) {
+                          onUnequipItem?.(slot.id);
+                          setLastEquipTap({ time: 0, slotId: null });
+                          return;
+                        }
+                        setLastEquipTap({ time: now, slotId: slot.id });
+                      }
+                      setSelectedSlotId(slot.id);
+                    }}
                     onDoubleClick={() => {
                       if (equippedItem && onUnequipItem) {
                         onUnequipItem(slot.id);
                       }
                     }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (equippedItem) {
+                        setContextMenu({
+                          isOpen: true,
+                          position: { x: e.clientX, y: e.clientY },
+                          item: equippedItem,
+                          isEquipped: true,
+                          slotKey: slot.id,
+                        });
+                      }
+                    }}
                     title={
                       equippedItem
-                        ? `${equippedItem.name} (Çift tıkla: Çıkar)`
+                        ? `${equippedItem.name} (Çift tıkla: Çıkar • Sağ tık: Menü)`
                         : `${slot.name} (${slot.slotHint || 'Boş'})`
                     }
                     className={`w-full aspect-square rounded-xl border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${
@@ -434,7 +478,34 @@ export default function CharacterTab({
                         {candidateItems.map((candidate) => (
                           <div
                             key={candidate.instanceId || candidate.id}
-                            className="p-2 rounded-lg bg-black/60 border border-amber-500/30 hover:border-amber-400 flex items-center justify-between gap-2 transition-all group"
+                            onClick={() => {
+                              if (contextMenu.isOpen) {
+                                setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: false, slotKey: null });
+                              }
+                              const now = Date.now();
+                              if (now - lastCandidateTap.time < 350 && lastCandidateTap.itemId === candidate.instanceId) {
+                                onEquipItem?.(candidate);
+                                setLastCandidateTap({ time: 0, itemId: null });
+                              } else {
+                                setLastCandidateTap({ time: now, itemId: candidate.instanceId });
+                              }
+                            }}
+                            onDoubleClick={() => {
+                              onEquipItem?.(candidate);
+                            }}
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setContextMenu({
+                                isOpen: true,
+                                position: { x: e.clientX, y: e.clientY },
+                                item: candidate,
+                                isEquipped: false,
+                                slotKey: selectedSlot.id,
+                              });
+                            }}
+                            title={`${candidate.name} (Çift tıkla: Kuşan • Sağ tık: Menü)`}
+                            className="p-2 rounded-lg bg-black/60 border border-amber-500/30 hover:border-amber-400 flex items-center justify-between gap-2 transition-all group cursor-pointer"
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <img
@@ -453,7 +524,10 @@ export default function CharacterTab({
                             </div>
                             <button
                               type="button"
-                              onClick={() => onEquipItem && onEquipItem(candidate)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEquipItem && onEquipItem(candidate);
+                              }}
                               className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/50 text-amber-200 hover:text-white font-cinzel text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer flex-shrink-0"
                             >
                               <ArrowRightLeft className="w-3 h-3" />
@@ -490,7 +564,34 @@ export default function CharacterTab({
                         {candidateItems.map((candidate) => (
                           <div
                             key={candidate.instanceId || candidate.id}
-                            className="p-2 rounded-lg bg-black/60 border border-emerald-500/30 hover:border-emerald-400 flex items-center justify-between gap-2 transition-all group"
+                            onClick={() => {
+                              if (contextMenu.isOpen) {
+                                setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: false, slotKey: null });
+                              }
+                              const now = Date.now();
+                              if (now - lastCandidateTap.time < 350 && lastCandidateTap.itemId === candidate.instanceId) {
+                                onEquipItem?.(candidate);
+                                setLastCandidateTap({ time: 0, itemId: null });
+                              } else {
+                                setLastCandidateTap({ time: now, itemId: candidate.instanceId });
+                              }
+                            }}
+                            onDoubleClick={() => {
+                              onEquipItem?.(candidate);
+                            }}
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setContextMenu({
+                                isOpen: true,
+                                position: { x: e.clientX, y: e.clientY },
+                                item: candidate,
+                                isEquipped: false,
+                                slotKey: selectedSlot.id,
+                              });
+                            }}
+                            title={`${candidate.name} (Çift tıkla: Kuşan • Sağ tık: Menü)`}
+                            className="p-2 rounded-lg bg-black/60 border border-emerald-500/30 hover:border-emerald-400 flex items-center justify-between gap-2 transition-all group cursor-pointer"
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <img
@@ -509,7 +610,10 @@ export default function CharacterTab({
                             </div>
                             <button
                               type="button"
-                              onClick={() => onEquipItem && onEquipItem(candidate)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEquipItem && onEquipItem(candidate);
+                              }}
                               className="px-3 py-1 rounded bg-emerald-600/30 hover:bg-emerald-600/60 border border-emerald-500/50 text-emerald-200 hover:text-white font-cinzel text-xs font-bold transition-all flex items-center gap-1 cursor-pointer flex-shrink-0"
                             >
                               <Check className="w-3 h-3 text-emerald-300" />
@@ -1070,6 +1174,33 @@ export default function CharacterTab({
 
         </div>
       </div>
+
+      {/* Özel MMORPG Sağ Tık Menüsü (Kuşan / Çıkar / Sil) */}
+      <ItemContextMenu
+        isOpen={contextMenu.isOpen}
+        position={contextMenu.position}
+        item={contextMenu.item}
+        isEquipped={contextMenu.isEquipped}
+        slotKey={contextMenu.slotKey}
+        player={player}
+        onEquip={(it) => {
+          onEquipItem?.(it);
+        }}
+        onUnequip={(sKey) => {
+          onUnequipItem?.(sKey);
+        }}
+        onDiscard={(instId, sellPrice) => {
+          onDiscardItem?.(instId, sellPrice);
+        }}
+        onInspect={(it) => {
+          if (it.slot) {
+            setSelectedSlotId(it.slot);
+          }
+        }}
+        onClose={() => {
+          setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: false, slotKey: null });
+        }}
+      />
     </div>
   );
 }
