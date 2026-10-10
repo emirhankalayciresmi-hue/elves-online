@@ -56,6 +56,7 @@ import {
   saveCharacterToCloud,
   fetchCharacterByUserId,
   debouncedSyncPlayerToCloud,
+  updatePlayerHeartbeat,
 } from '@/services/cloudCharacterService';
 import { storageManager, StorageKeys } from '@/core/storage/storageManager';
 
@@ -235,6 +236,17 @@ export default function App() {
       unsubscribeChat();
     };
   }, []);
+
+  // Canlı Oyuncu Kalp Atışı (Online durumunu Supabase'de güncel tutar)
+  useEffect(() => {
+    if (viewMode === 'game' && player?.name) {
+      updatePlayerHeartbeat(player.name);
+      const heartbeatInterval = setInterval(() => {
+        updatePlayerHeartbeat(player.name);
+      }, 60000); // Her 60 saniyede bir
+      return () => clearInterval(heartbeatInterval);
+    }
+  }, [viewMode, player?.name]);
 
   const handleSendMessage = useCallback((newMsg) => {
     setChatMessages((prev) => {

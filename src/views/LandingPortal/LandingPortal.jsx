@@ -149,8 +149,8 @@ export default function LandingPortal({
   const [googleLoading, setGoogleLoading] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  // Live Player Counts
-  const [playerCounts, setPlayerCounts] = useState({ onlineCount: 142, totalCount: 1420 });
+  // Live Player Counts (Veritabanından doğrudan çekilir)
+  const [playerCounts, setPlayerCounts] = useState({ onlineCount: 0, totalCount: 0 });
 
   // Lightbox Preview Modal
   const [previewImage, setPreviewImage] = useState(null);

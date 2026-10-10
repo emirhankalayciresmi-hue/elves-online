@@ -173,30 +173,47 @@ export function debouncedSyncPlayerToCloud(player, userId = null, delay = 5000) 
   }, effectiveDelay);
 }
 
+export async function updatePlayerHeartbeat(characterName) {
+  if (!characterName) return;
+  try {
+    await supabase
+      .from('characters')
+      .update({ last_active_at: new Date().toISOString() })
+      .ilike('name', characterName.trim());
+  } catch (e) {
+    // ignore background heartbeat errors
+  }
+}
+
 export async function fetchPlayerCounts() {
   try {
-    const { count, error } = await supabase
+    // 1. Toplam Oyuncu Sayısı: characters tablosundaki net toplam satır sayısı
+    const { count: total, error: totalErr } = await supabase
       .from('characters')
-      .select('*', { count: 'exact', head: true });
+      .select('id', { count: 'exact', head: true });
 
-    const dbCount = !error && typeof count === 'number' ? count : 0;
-    const baseTotal = 1420 + dbCount;
-    const now = new Date();
-    const hour = now.getHours();
-    const timeFactor = Math.sin((hour / 24) * Math.PI * 2) * 25;
-    const minuteTick = Math.sin(Date.now() / 30000) * 9;
-    const calculatedOnline = Math.max(68, Math.floor(134 + timeFactor + minuteTick + dbCount * 2));
+    const totalCount = !totalErr && typeof total === 'number' ? total : 0;
+
+    // 2. Online Oyuncu Sayısı: Son 5 dakika içinde aktif olan karakterler
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { count: online, error: onlineErr } = await supabase
+      .from('characters')
+      .select('id', { count: 'exact', head: true })
+      .gte('last_active_at', fiveMinutesAgo);
+
+    const onlineCount = !onlineErr && typeof online === 'number' ? online : 0;
 
     return {
-      totalCount: baseTotal,
-      onlineCount: calculatedOnline,
+      totalCount,
+      onlineCount,
     };
   } catch (err) {
-    console.warn('Error fetching player counts:', err);
+    console.warn('Error fetching player counts from DB:', err);
     return {
-      totalCount: 1420,
-      onlineCount: 142,
+      totalCount: 0,
+      onlineCount: 0,
     };
   }
 }
+
 
