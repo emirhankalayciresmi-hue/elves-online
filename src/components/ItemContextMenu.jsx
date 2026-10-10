@@ -79,19 +79,24 @@ export default function ItemContextMenu({
     >
       {/* Mini Item Header */}
       <div className="flex items-center gap-2 p-1.5 rounded-lg bg-black/60 border border-white/10">
-        <div className="w-8 h-8 rounded bg-black/80 border border-amber-500/40 p-0.5 flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded bg-black/80 border border-amber-500/40 p-0.5 flex items-center justify-center flex-shrink-0 relative">
           <img
             src={item.image}
             alt={item.name}
             className="w-full h-full object-contain drop-shadow"
           />
+          {(item.count || 1) > 1 && (
+            <span className="absolute -bottom-1 -right-1 font-mono text-[8px] font-bold text-amber-200 bg-black/90 border border-amber-500/60 rounded px-1">
+              {item.count}
+            </span>
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-cinzel font-bold text-amber-100 gold-text-glow truncate">
-            {item.name}
+            {item.name} {(item.count || 1) > 1 ? `(${item.count}x)` : ''}
           </p>
           <p className="text-[9px] font-mono text-slate-400 truncate">
-            {isOre ? 'Maden & Materyal' : item.className ? `${item.className} Eşyası` : 'Ekipman'}
+            {isOre ? `Maden & Materyal (${item.count || 1}/200)` : item.className ? `${item.className} Eşyası` : 'Ekipman'}
           </p>
         </div>
         <button
@@ -159,19 +164,48 @@ export default function ItemContextMenu({
           <span>Detayları İncele</span>
         </button>
 
-        {/* 4. Madeni Sat (Eğer madense) */}
+        {/* 4. Madeni Sat (Eğer madense: Tüm Yığın veya 1 Adet) */}
         {isOre && !isEquipped && onDiscard && (
-          <button
-            type="button"
-            onClick={() => {
-              onDiscard(item.instanceId, item.sellPrice || 1500);
-              onClose?.();
-            }}
-            className="w-full px-2.5 py-1.5 rounded-lg bg-amber-950/60 hover:bg-amber-800/70 border border-yellow-500/40 text-yellow-200 font-cinzel text-[11px] font-bold flex items-center gap-2 transition-all cursor-pointer"
-          >
-            <Coins className="w-3.5 h-3.5 text-yellow-400" />
-            <span>Madeni Sat (+{(item.sellPrice || 1500).toLocaleString('tr-TR')})</span>
-          </button>
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => {
+                const count = Number(item.count) > 0 ? Number(item.count) : 1;
+                const totalGold = (Number(item.sellPrice) || 1500) * count;
+                onDiscard(item.instanceId, totalGold, 'all');
+                onClose?.();
+              }}
+              className="w-full px-2.5 py-1.5 rounded-lg bg-amber-950/70 hover:bg-amber-800/80 border border-yellow-500/50 text-yellow-200 font-cinzel text-[11px] font-bold flex items-center justify-between transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <Coins className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+                <span className="truncate">Tüm Yığını Sat ({(item.count || 1)}x)</span>
+              </div>
+              <span className="font-mono text-[10px] text-amber-300 ml-1 flex-shrink-0">
+                +{((Number(item.sellPrice) || 1500) * (item.count || 1)).toLocaleString('tr-TR')} Altın
+              </span>
+            </button>
+
+            {(item.count || 1) > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const unitPrice = Number(item.sellPrice) || 1500;
+                  onDiscard(item.instanceId, unitPrice, 1);
+                  onClose?.();
+                }}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-black/60 hover:bg-white/10 border border-yellow-500/30 text-yellow-100 font-cinzel text-[10px] font-semibold flex items-center justify-between transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Coins className="w-3 h-3 text-yellow-400/80 flex-shrink-0" />
+                  <span>1 Adet Sat</span>
+                </div>
+                <span className="font-mono text-[10px] text-slate-300 ml-1 flex-shrink-0">
+                  +{(Number(item.sellPrice) || 1500).toLocaleString('tr-TR')} Altın
+                </span>
+              </button>
+            )}
+          </div>
         )}
 
         {/* 5. Çantadan Sil (Eğer çantadaysa) */}
@@ -179,8 +213,9 @@ export default function ItemContextMenu({
           <button
             type="button"
             onClick={() => {
-              if (window.confirm(`"${item.name}" eşyasını çantadan tamamen silmek istediğinize emin misiniz?`)) {
-                onDiscard(item.instanceId);
+              const countText = (item.count || 1) > 1 ? ` (${item.count} adet)` : '';
+              if (window.confirm(`"${item.name}" eşyasını${countText} çantadan tamamen silmek istediğinize emin misiniz?`)) {
+                onDiscard(item.instanceId, 0, 'all');
                 onClose?.();
               }
             }}

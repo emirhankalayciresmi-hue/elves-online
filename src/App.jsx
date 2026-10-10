@@ -435,8 +435,8 @@ export default function App() {
     savePlayerToStorage(updated);
   };
 
-  const handleDiscardItem = (instanceId, sellReward = 0) => {
-    const updated = discardOrSellItem(player, instanceId, sellReward);
+  const handleDiscardItem = (instanceId, sellReward = 0, amountToSell = 'all') => {
+    const updated = discardOrSellItem(player, instanceId, sellReward, amountToSell);
     setPlayer(updated);
     savePlayerToStorage(updated);
   };

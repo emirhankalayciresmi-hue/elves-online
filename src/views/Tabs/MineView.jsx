@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Pickaxe, Clock, CheckCircle2, XCircle, Zap, Award
+  Pickaxe, Clock, CheckCircle2, XCircle, Zap, Award, Coins, Sparkles, History, Info
 } from 'lucide-react';
 import OrnateFrame from '../../components/OrnateFrame';
 import ElvenButton from '../../components/ElvenButton';
@@ -44,6 +44,7 @@ export default function MineView({
   let remainingSeconds = 0;
   let progressPercent = 0;
   let isFinished = false;
+  let nextDropSeconds = 0;
 
   if (activeMine) {
     const start = activeMine.startTime || currentTime;
@@ -52,6 +53,10 @@ export default function MineView({
     remainingSeconds = Math.max(0, duration - elapsedSeconds);
     progressPercent = Math.min(100, Math.round((elapsedSeconds / duration) * 100));
     isFinished = remainingSeconds <= 0;
+
+    if (activeMine.nextDropAt && activeMine.nextDropAt > currentTime) {
+      nextDropSeconds = Math.max(0, Math.ceil((activeMine.nextDropAt - currentTime) / 1000));
+    }
   }
 
   const formatTime = (secs) => {
@@ -103,12 +108,12 @@ export default function MineView({
               </div>
             </div>
 
-            {/* Canlı Sayaç */}
+            {/* Canlı Kalan Süre Sayacı */}
             <div className="flex items-center gap-3 bg-black/60 px-3.5 py-2 rounded-lg border border-amber-500/30">
               <Clock className={`w-5 h-5 ${isFinished ? 'text-emerald-400' : 'text-amber-400 animate-spin'}`} style={{ animationDuration: '8s' }} />
               <div>
                 <span className="text-[10px] text-slate-400 font-mono block uppercase">
-                  {isFinished ? 'Durum' : 'Kalan Süre'}
+                  {isFinished ? 'Durum' : 'Toplam Kalan Süre'}
                 </span>
                 <span className={`text-base font-mono font-bold ${isFinished ? 'text-emerald-400' : 'text-amber-200'}`}>
                   {isFinished ? 'TAMAMLANDI' : formatTime(remainingSeconds)}
@@ -117,10 +122,49 @@ export default function MineView({
             </div>
           </div>
 
+          {/* Canlı Kazı İstatistik Kartları */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="p-2.5 rounded-lg bg-black/60 border border-amber-500/30 flex items-center gap-3">
+              <div className="p-2 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[10px] font-mono text-slate-400 uppercase">Çıkarılan Cevher</div>
+                <div className="text-sm font-mono font-bold text-emerald-300">
+                  {activeMine.minedOres || 0} / {activeMine.targetOres || 10} Adet
+                </div>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-black/60 border border-amber-500/30 flex items-center gap-3">
+              <div className="p-2 rounded bg-amber-950/60 border border-amber-500/40 text-amber-300">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[10px] font-mono text-slate-400 uppercase">Sonraki Cevher Vuruşu</div>
+                <div className="text-sm font-mono font-bold text-amber-200">
+                  {isFinished ? 'Sefer Bitti' : nextDropSeconds > 0 ? `${nextDropSeconds} sn` : 'Kazılıyor...'}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-2.5 rounded-lg bg-black/60 border border-amber-500/30 flex items-center gap-3">
+              <div className="p-2 rounded bg-yellow-950/60 border border-yellow-500/40 text-yellow-300">
+                <Coins className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[10px] font-mono text-slate-400 uppercase">Seferden Kazanılan Altın</div>
+                <div className="text-sm font-mono font-bold text-yellow-300">
+                  +{(activeMine.accumulatedGold || 0).toLocaleString('tr-TR')} Altın
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* İlerleme Çubuğu */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-mono text-slate-300">
-              <span>Kazı İlerlemesi (10 Dk Sabit Süre)</span>
+              <span>Maden Kazı İlerlemesi (10 Dk Net Süre)</span>
               <span className="text-amber-300 font-bold">%{progressPercent}</span>
             </div>
             <div className="w-full h-3 bg-black/80 rounded-full overflow-hidden border border-amber-500/50 p-0.5">
@@ -131,14 +175,47 @@ export default function MineView({
             </div>
           </div>
 
-          {/* Eylemler: İptal ve Hızlı Bitir */}
-          <div className="flex items-center justify-end gap-2 pt-1 border-t border-white/5">
+          {/* Anında Envantere Düşme Bilgilendirmesi */}
+          <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 flex items-start gap-2.5 text-xs text-slate-300">
+            <Info className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-emerald-300">Anında Envantere Aktarım: </span>
+              10 dakika boyunca 5-10 arası cevher kazı devam ederken doğrudan çantanıza düşer (max 200 üst üste istiflenir). 10 dakika bekleme zorunluluğu yoktur; kazıdan ayrılsanız da çıkan tüm cevherler envanterinizde kalır.
+            </div>
+          </div>
+
+          {/* Canlı Kazı Günlüğü (Zindan Günlüğü Formatı) */}
+          {activeMine.recentLogs && activeMine.recentLogs.length > 0 && (
+            <div className="space-y-1.5 bg-black/70 p-3 rounded-lg border border-amber-500/20 max-h-36 overflow-y-auto">
+              <div className="flex items-center gap-1.5 text-xs font-cinzel text-amber-300 font-bold border-b border-white/5 pb-1">
+                <History className="w-3.5 h-3.5 text-amber-400" />
+                <span>Canlı Kazı Günlüğü</span>
+              </div>
+              <div className="space-y-1 font-mono text-[11px]">
+                {activeMine.recentLogs.map((log, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-slate-300 py-0.5 border-b border-white/5 last:border-0"
+                  >
+                    <span className="text-amber-200">{log.message}</span>
+                    <span className="text-[10px] text-slate-500">{log.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Eylemler: İptal */}
+          <div className="flex items-center justify-between pt-1 border-t border-white/5">
+            <span className="text-[11px] font-mono text-slate-400">
+              * Kazıyı durdursanız dahi çıkarılan {activeMine.minedOres || 0} cevher sizde kalır.
+            </span>
             <button
               type="button"
               onClick={onCancelMining}
               className="px-3 py-1.5 text-xs font-mono text-rose-400 hover:text-white bg-rose-950/60 hover:bg-rose-900 border border-rose-500/40 rounded cursor-pointer transition-all flex items-center gap-1"
             >
-              <XCircle className="w-3.5 h-3.5" /> İptal Et
+              <XCircle className="w-3.5 h-3.5" /> Kazıyı Durdur ({activeMine.minedOres || 0} Cevher Çantada)
             </button>
           </div>
         </OrnateFrame>

@@ -6,6 +6,7 @@ import { DUNGEON_GROUPS } from '@/core/config/dungeonData';
 import { ELVEN_MINES, MINING_DURATION_SECONDS } from '@/core/config/miningData';
 import {
   processDungeonCombatTick,
+  processMiningTick,
   executeMiningCompletion,
 } from '@/domain/gameEngine';
 import { storageManager, StorageKeys } from '@/core/storage/storageManager';
@@ -60,15 +61,29 @@ export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
           }
         }
 
-        // 2. Maden Süresi Kontrolü (10 Dakika Sabit)
+        // 2. Maden Süreci & Canlı Cevher Düşme Döngüsü (10 Dakika, 5-10 Maden)
         if (updated.activeMine) {
-          const start = updated.activeMine.startTime || now;
-          const durationMs = (updated.activeMine.durationSeconds || MINING_DURATION_SECONDS) * 1000;
-          if (now - start >= durationMs) {
-            const mine = ELVEN_MINES.find((m) => m.id === updated.activeMine.mineId) || ELVEN_MINES[0];
+          const mineState = updated.activeMine;
+          const start = mineState.startTime || now;
+          const durationMs = (mineState.durationSeconds || MINING_DURATION_SECONDS) * 1000;
+          const isTimeUp = now - start >= durationMs;
+
+          // A) Periyodik kazı tiki: süre dolmadan önce aralıklarla 1'er cevher çantaya düşer
+          if (!isTimeUp && now >= mineState.nextDropAt && (mineState.minedOres || 0) < (mineState.targetOres || 5)) {
+            const tickRes = processMiningTick(updated);
+            if (tickRes.changed) {
+              updated = tickRes.player;
+              stateChanged = true;
+            }
+          }
+
+          // B) 10 Dakika tamamlandığında sefer bitişi
+          if (isTimeUp) {
+            const mine = ELVEN_MINES.find((m) => m.id === mineState.mineId) || ELVEN_MINES[0];
             updated = executeMiningCompletion(updated, mine, true);
             stateChanged = true;
             shouldSyncCloud = true;
+            onAnnouncementRef.current?.(`✨ [${updated.name}] "${mine.name}" maden kazısını başarıyla tamamladı!`, 'normal');
           }
         }
 
@@ -169,36 +184,62 @@ export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
     });
   };
 
-  // Madencilik Başlatma (10 Dakika Sabit)
+  // Madencilik Başlatma (10 Dakika Sabit, 5-10 Cevher Hedefi)
   const startMining = (mineId) => {
     const mine = ELVEN_MINES.find((m) => m.id === mineId);
     if (!mine || !player) return;
+
+    // Hedef Cevher: En az 5, en fazla 10 (Garanti)
+    const targetOres = Math.floor(Math.random() * (10 - 5 + 1)) + 5;
+    const now = Date.now();
+    const durationSeconds = MINING_DURATION_SECONDS; // 600 saniye
+    // Cevher düşme aralığı: ~60-90 saniye (örneğin 600 sn / (7 + 1) ≈ 75 sn)
+    const intervalSec = Math.max(35, Math.floor(durationSeconds / (targetOres + 1)));
+
+    const initialLog = {
+      id: `mine_log_init_${now}`,
+      text: `⛏️ "${mine.name}" maden ocağında kazı başladı! (Hedef: ${targetOres} Cevher)`,
+      timestamp: now,
+      oreName: mine.name,
+      count: 0,
+    };
 
     const updated = {
       ...player,
       activeMine: {
         mineId: mine.id,
         name: mine.name,
-        durationSeconds: MINING_DURATION_SECONDS,
-        startTime: Date.now(),
+        durationSeconds,
+        startTime: now,
+        targetOres,
+        minedOres: 0,
+        nextDropAt: now + (intervalSec * 1000),
+        intervalMs: intervalSec * 1000,
         minGold: mine.minGold,
         maxGold: mine.maxGold,
-        minExp: mine.minExp,
-        maxExp: mine.maxExp,
         oreImage: mine.oreImage,
         cardImage: mine.cardImage,
+        sellPrice: mine.sellPrice,
+        lore: mine.lore,
+        rarity: mine.rarity,
+        level: mine.level,
+        recentLogs: [initialLog],
       },
     };
     setPlayer(updated);
     onSavePlayer(updated);
+    onAnnouncementRef.current?.(`⛏️ [${player.name}] "${mine.name}" madeninde kazıya başladı! (Hedef: ${targetOres} Cevher)`, 'normal');
   };
 
-  // Madencilik İptali
+  // Madencilik İptali (Kazanılan cevherler çantada kalır)
   const cancelMining = () => {
-    if (!player) return;
+    if (!player || !player.activeMine) return;
+    const mined = player.activeMine.minedOres || 0;
+    const mineName = player.activeMine.name || 'Maden';
     const updated = { ...player, activeMine: null };
     setPlayer(updated);
     onSavePlayer(updated);
+    onAnnouncementRef.current?.(`⛏️ "${mineName}" kazısı durduruldu. Çıkarılan ${mined} adet cevher çantanızda kaldı.`, 'normal');
   };
 
   // Maden Raporunu Kapatma

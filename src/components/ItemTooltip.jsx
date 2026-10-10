@@ -72,12 +72,20 @@ export function ItemTooltipCard({
           </span>
         </div>
         {item.isOre || item.type === 'ore' ? (
-          <div className="flex justify-between text-slate-300">
-            <span className="text-slate-400">Satış Değeri:</span>
-            <span className="text-yellow-300 font-semibold">
-              {(item.sellPrice || 1500).toLocaleString('tr-TR')} Altın
-            </span>
-          </div>
+          <>
+            <div className="flex justify-between text-slate-300">
+              <span className="text-slate-400">Yığın Miktarı:</span>
+              <span className="text-emerald-300 font-bold">
+                {item.count || 1} / 200 Adet
+              </span>
+            </div>
+            <div className="flex justify-between text-slate-300">
+              <span className="text-slate-400">Birim Satış:</span>
+              <span className="text-yellow-300 font-semibold">
+                {(item.sellPrice || 1500).toLocaleString('tr-TR')} Altın
+              </span>
+            </div>
+          </>
         ) : (
           <div className="flex justify-between text-slate-300">
             <span className="text-slate-400">Gereken Seviye:</span>
@@ -107,17 +115,36 @@ export function ItemTooltipCard({
           {item.isOre || item.type === 'ore' ? (
             /* Ore Actions: Sell or Discard */
             onDiscard && (
-              <ElvenButton
-                size="sm"
-                fullWidth
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDiscard(item.instanceId, item.sellPrice || 1500);
-                  onClose?.();
-                }}
-              >
-                Madeni Sat (+{(item.sellPrice || 1500).toLocaleString('tr-TR')} Altın)
-              </ElvenButton>
+              <div className="space-y-1">
+                <ElvenButton
+                  size="sm"
+                  fullWidth
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const count = Number(item.count) > 0 ? Number(item.count) : 1;
+                    const totalGold = (Number(item.sellPrice) || 1500) * count;
+                    onDiscard(item.instanceId, totalGold, 'all');
+                    onClose?.();
+                  }}
+                >
+                  Tüm Yığını Sat (+{((Number(item.sellPrice) || 1500) * (item.count || 1)).toLocaleString('tr-TR')} Altın)
+                </ElvenButton>
+
+                {(item.count || 1) > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const unitPrice = Number(item.sellPrice) || 1500;
+                      onDiscard(item.instanceId, unitPrice, 1);
+                      onClose?.();
+                    }}
+                    className="w-full py-1 rounded bg-black/60 hover:bg-white/10 border border-yellow-500/30 text-yellow-100 font-cinzel text-[10px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                  >
+                    <span>1 Adet Sat (+{(Number(item.sellPrice) || 1500).toLocaleString('tr-TR')} Altın)</span>
+                  </button>
+                )}
+              </div>
             )
           ) : isEquipped ? (
             <ElvenButton

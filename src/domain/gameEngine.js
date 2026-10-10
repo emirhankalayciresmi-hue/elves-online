@@ -4,7 +4,7 @@
 
 import { calculateLevelAndExp, rollDungeonReward, DUNGEON_GROUPS } from '@/core/config/dungeonData';
 import { rollDungeonEquipmentDrops, isItemForPlayerClass } from '@/core/config/itemsData';
-import { ELVEN_MINES, MINING_DURATION_SECONDS, rollMiningRewards } from '@/core/config/miningData';
+import { ELVEN_MINES, MINING_DURATION_SECONDS, rollMiningRewards, createOreItem } from '@/core/config/miningData';
 import {
   ensurePlayerQuestState,
   applyQuestProgress,
@@ -27,6 +27,7 @@ export {
   ELVEN_MINES,
   MINING_DURATION_SECONDS,
   rollMiningRewards,
+  createOreItem,
   ensurePlayerQuestState,
   applyQuestProgress,
   selectDailyQuestsForLevel,
@@ -450,50 +451,173 @@ export function clearNewDungeonDrops(player) {
 }
 
 /**
+ * Envantere Eşya Ekleme Mantığı (Maksimum 200 Adet Yığın / Stacking)
+ * Maden cevherleri ve materyaller 200 adede kadar aynı yuvada birikir.
+ * Ekipmanlar ise her zaman tekil slot kaplar.
+ */
+export function addItemToInventory(inventory, newItem, maxStack = 200) {
+  if (!newItem) return Array.isArray(inventory) ? inventory : [];
+
+  const currentInventory = Array.isArray(inventory) ? [...inventory] : [];
+  const isStackable = Boolean(newItem.isOre || newItem.type === 'ore' || newItem.stackable);
+
+  if (!isStackable) {
+    // Ekipman vb. tekil eşyalar
+    return [...currentInventory, { ...newItem, count: 1 }];
+  }
+
+  let remaining = Number(newItem.count) > 0 ? Number(newItem.count) : 1;
+
+  // 1. Önce aynı cevherden var olan ve 200'den az olan yuvayı bul ve üzerine ekle
+  for (let i = 0; i < currentInventory.length; i++) {
+    const existing = currentInventory[i];
+    if (!existing) continue;
+
+    const isSameOre =
+      (existing.id && existing.id === newItem.id) ||
+      (existing.name && existing.name === newItem.name && (existing.isOre || existing.type === 'ore'));
+
+    if (isSameOre) {
+      const currentCount = Number(existing.count) > 0 ? Number(existing.count) : 1;
+      if (currentCount < maxStack) {
+        const space = maxStack - currentCount;
+        const addAmount = Math.min(space, remaining);
+        currentInventory[i] = {
+          ...existing,
+          count: currentCount + addAmount,
+        };
+        remaining -= addAmount;
+        if (remaining <= 0) break;
+      }
+    }
+  }
+
+  // 2. Taşma varsa veya hiç yuva yoksa yeni slot açarak ekle
+  while (remaining > 0) {
+    const addAmount = Math.min(maxStack, remaining);
+    const newSlotItem = {
+      ...newItem,
+      instanceId: `${newItem.id || 'item'}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      count: addAmount,
+    };
+    currentInventory.push(newSlotItem);
+    remaining -= addAmount;
+  }
+
+  return currentInventory;
+}
+
+/**
+ * 10 Dakikalık Madencilik Süresince Canlı Kazı Döngüsü
+ * Maden devam ederken cevherler zindanda olduğu gibi anında çantaya düşer.
+ * 10 dakika boyunca toplam 5 - 10 cevher hedefine göre düzenli aralıklarla düşer.
+ */
+export function processMiningTick(player) {
+  if (!player || !player.activeMine) return { player, changed: false };
+
+  const activeMine = player.activeMine;
+  const mineData = ELVEN_MINES.find((m) => m.id === activeMine.mineId) || ELVEN_MINES[0];
+  const now = Date.now();
+
+  const targetOres = activeMine.targetOres || 7;
+  const currentMined = activeMine.minedOres || 0;
+
+  if (currentMined >= targetOres) {
+    return { player, changed: false };
+  }
+
+  const newMinedCount = currentMined + 1;
+  const newOre = createOreItem(mineData, 1);
+
+  // Envantere 200'lük yığın mantığıyla anında ekle!
+  const updatedInventory = addItemToInventory(player.inventory, newOre, 200);
+
+  // Altın payı
+  const goldPerOre = Math.round((mineData.minGold || 2000) / targetOres);
+  const newGold = (player.gold || 0) + goldPerOre;
+
+  const nextInterval = activeMine.intervalMs || Math.floor((MINING_DURATION_SECONDS * 1000) / (targetOres + 1));
+  const nextDropAt = now + nextInterval;
+
+  const logEntry = {
+    id: `mine_log_${now}_${newMinedCount}`,
+    text: `⛏️ [${mineData.name}] damarından 1 adet cevher çıkarıldı! (${newMinedCount}/${targetOres})`,
+    timestamp: now,
+    oreName: mineData.name,
+    count: newMinedCount,
+    goldGain: goldPerOre,
+  };
+
+  const updatedLogs = [...(activeMine.recentLogs || []), logEntry].slice(-15);
+
+  let updatedPlayer = {
+    ...player,
+    gold: newGold,
+    inventory: updatedInventory,
+    activeMine: {
+      ...activeMine,
+      minedOres: newMinedCount,
+      nextDropAt,
+      recentLogs: updatedLogs,
+    },
+  };
+
+  // Görev ilerlemesi
+  updatedPlayer = applyQuestProgress(updatedPlayer, 'gold_earned', goldPerOre);
+
+  return {
+    player: updatedPlayer,
+    changed: true,
+    droppedOre: newOre,
+    minedCount: newMinedCount,
+    targetOres,
+  };
+}
+
+/**
  * Madencilik Tamamlama Mantığı (10 Dakika Sabit Süre Dolduğunda)
+ * Eğer süre dolduğunda hedef 5-10 madenden eksik kalan olduysa aradaki farkı telafi eder.
  */
 export function executeMiningCompletion(player, mine, forceAuto = true) {
   if (!player || !mine) return player;
 
-  const rolled = rollMiningRewards(mine);
-  const expReward = rolled.exp;
-  const goldReward = rolled.gold;
-  const droppedOres = rolled.droppedOres;
+  const activeMine = player.activeMine;
+  const targetOres = activeMine?.targetOres || (Math.floor(Math.random() * (10 - 5 + 1)) + 5);
+  const alreadyMined = activeMine?.minedOres || 0;
+  const remainingDeficit = Math.max(0, targetOres - alreadyMined);
 
-  const result = calculateLevelAndExp(
-    player.level || 1,
-    player.exp || 0,
-    expReward,
-    player.gold || 0,
-    goldReward
-  );
+  let currentInventory = Array.isArray(player.inventory) ? player.inventory : [];
 
-  const currentInventory = Array.isArray(player.inventory) ? player.inventory : [];
-  const updatedInventory = [...currentInventory, ...droppedOres];
+  if (remainingDeficit > 0) {
+    const deficitOre = createOreItem(mine, remainingDeficit);
+    currentInventory = addItemToInventory(currentInventory, deficitOre, 200);
+  }
+
+  // Kalan altın ödülü
+  const remainingGold = Math.round(((mine.maxGold + mine.minGold) / 2) * (remainingDeficit / targetOres));
+  const finalGold = (player.gold || 0) + remainingGold;
 
   let updated = {
     ...player,
-    level: result.level,
-    exp: result.exp,
-    maxExp: result.maxExp,
-    gold: result.gold,
-    inventory: updatedInventory,
+    gold: finalGold,
+    inventory: currentInventory,
     activeMine: null,
     lastMineReport: {
       mineName: mine.name,
       completedAt: new Date().toISOString(),
-      expReward,
-      goldReward,
-      leveledUp: result.leveledUp,
-      newLevel: result.level,
-      droppedOres,
+      expReward: 0,
+      goldReward: (mine.minGold || 2000),
+      totalMined: targetOres,
+      droppedOres: [createOreItem(mine, targetOres)],
       autoCollected: forceAuto,
     },
   };
 
   // Görev İlerlemeleri
   updated = applyQuestProgress(updated, 'mine_clear', 1);
-  updated = applyQuestProgress(updated, 'gold_earned', goldReward);
+  if (remainingGold > 0) {
+    updated = applyQuestProgress(updated, 'gold_earned', remainingGold);
+  }
 
   return updated;
 }
@@ -610,20 +734,45 @@ export function unequipItem(player, slotKey) {
 
 /**
  * Eşya Çantadan Atma veya Cevher Satma Mantığı
+ * Yığınlı madenlerde 1 adet veya Tüm Yığını satma desteği.
  */
-export function discardOrSellItem(player, instanceId, sellPrice = 0) {
+export function discardOrSellItem(player, instanceId, sellPrice = 0, amountToSell = 'all') {
   if (!player) return player;
 
-  const newInventory = (player.inventory || []).filter((it) => it.instanceId !== instanceId);
+  const currentInventory = Array.isArray(player.inventory) ? [...player.inventory] : [];
+  const itemIndex = currentInventory.findIndex((it) => it.instanceId === instanceId);
+  if (itemIndex === -1) return player;
+
+  const item = currentInventory[itemIndex];
+  const count = Number(item.count) > 0 ? Number(item.count) : 1;
+  let goldGain = 0;
+  let newInventory = [...currentInventory];
+  let soldAmount = 1;
+
+  if (amountToSell === 1 && count > 1) {
+    // 1 adet sat
+    goldGain = Number(item.sellPrice) || Math.round(Number(sellPrice) / count) || 0;
+    soldAmount = 1;
+    newInventory[itemIndex] = {
+      ...item,
+      count: count - 1,
+    };
+  } else {
+    // Tüm yığını veya tekil eşyayı sat / sil
+    goldGain = Number(sellPrice) || 0;
+    soldAmount = count;
+    newInventory = currentInventory.filter((_, idx) => idx !== itemIndex);
+  }
+
   let updated = {
     ...player,
-    gold: (player.gold || 0) + (Number(sellPrice) || 0),
+    gold: (player.gold || 0) + goldGain,
     inventory: newInventory,
   };
 
-  if (sellPrice > 0) {
-    updated = applyQuestProgress(updated, 'ore_sell', 1);
-    updated = applyQuestProgress(updated, 'gold_earned', Number(sellPrice));
+  if (goldGain > 0) {
+    updated = applyQuestProgress(updated, 'ore_sell', soldAmount);
+    updated = applyQuestProgress(updated, 'gold_earned', goldGain);
   }
 
   return updated;

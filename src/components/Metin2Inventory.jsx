@@ -264,6 +264,13 @@ export default function Metin2Inventory({
                   </span>
                 )}
 
+                {/* Metin2 Yığın Sayacı (Maks 200 Adet) */}
+                {item && (Number(item.count) || 1) > 1 && (
+                  <span className="absolute bottom-1 right-1 font-mono text-[9px] font-black text-amber-200 bg-black/90 border border-amber-500/70 rounded px-1 py-0 shadow-[0_0_8px_rgba(0,0,0,0.9)] z-10 select-none">
+                    {item.count}
+                  </span>
+                )}
+
                 {item ? (
                   <div className="flex flex-col items-center justify-center w-full h-full">
                     <img
@@ -310,8 +317,8 @@ export default function Metin2Inventory({
               setHoveredItem(null);
             }
           }}
-          onDiscard={(instId) => {
-            onDiscardItem?.(instId);
+          onDiscard={(instId, sellPrice, amountToSell) => {
+            onDiscardItem?.(instId, sellPrice, amountToSell);
             setPinnedItem(null);
             setHoveredItem(null);
           }}
@@ -334,8 +341,8 @@ export default function Metin2Inventory({
             onEquipItem?.(it);
           }
         }}
-        onDiscard={(instId, sellPrice) => {
-          onDiscardItem?.(instId, sellPrice);
+        onDiscard={(instId, sellPrice, amountToSell) => {
+          onDiscardItem?.(instId, sellPrice, amountToSell);
         }}
         onInspect={(it) => {
           setPinnedItem(it);
