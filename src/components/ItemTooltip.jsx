@@ -371,13 +371,6 @@ export default function Metin2ComparisonTooltip({
 
   return (
     <>
-      {/* If pinned on desktop, backdrop to dismiss on click outside */}
-      {isPinned && (
-        <div
-          className="fixed inset-0 z-[9990] bg-black/30 backdrop-blur-[1px]"
-          onClick={onClose}
-        />
-      )}
       <div
         style={{
           position: 'fixed',

@@ -536,59 +536,56 @@ export function getStackableKey(item) {
 export function consolidateInventory(inventory, maxStack = 200) {
   if (!Array.isArray(inventory)) return [];
 
-  const result = [];
-  const availableSlots = new Map(); // key -> [indices with count < maxStack]
+  // 48 slotluk sabit yuva dizilimi oluştur
+  const inv = [...inventory];
+  while (inv.length < 48) {
+    inv.push(null);
+  }
 
-  for (const rawItem of inventory) {
-    if (!rawItem) continue;
+  // Yığınlanabilir eşyaları birleştir (aynı madenleri/materyalleri tek slota topla)
+  const stackMap = new Map(); // key -> ilk bulunan slot indeksi
 
-    if (!isStackableItem(rawItem)) {
-      result.push(rawItem);
+  for (let i = 0; i < inv.length; i++) {
+    const item = inv[i];
+    if (!item) continue;
+
+    if (!isStackableItem(item)) {
       continue;
     }
 
-    const key = getStackableKey(rawItem);
-    let remaining = Math.max(1, Number(rawItem.count) || 1);
+    const key = getStackableKey(item);
+    const count = Math.max(1, Number(item.count) || 1);
 
-    // 1. Mevcut açık yuvaya ekle
-    if (availableSlots.has(key)) {
-      const slotIndices = availableSlots.get(key);
-      for (const idx of slotIndices) {
-        const existing = result[idx];
-        const existingCount = Math.max(1, Number(existing.count) || 1);
-        const space = maxStack - existingCount;
-        if (space > 0) {
-          const addAmount = Math.min(space, remaining);
-          result[idx] = {
-            ...existing,
-            count: existingCount + addAmount,
-          };
-          remaining -= addAmount;
-          if (remaining <= 0) break;
+    if (stackMap.has(key)) {
+      const prevIdx = stackMap.get(key);
+      const prevItem = inv[prevIdx];
+      const prevCount = Math.max(1, Number(prevItem?.count) || 1);
+      const space = maxStack - prevCount;
+
+      if (space > 0) {
+        const addAmount = Math.min(space, count);
+        inv[prevIdx] = { ...prevItem, count: prevCount + addAmount };
+        const remainder = count - addAmount;
+
+        if (remainder > 0) {
+          inv[i] = { ...item, count: remainder };
+          if (prevCount + addAmount >= maxStack) {
+            stackMap.set(key, i);
+          }
+        } else {
+          inv[i] = null; // Birleştirildi, bu yuva boşaldı
         }
+      } else {
+        stackMap.set(key, i);
       }
-    }
-
-    // 2. Kalan varsa yeni slot aç
-    while (remaining > 0) {
-      const addAmount = Math.min(maxStack, remaining);
-      const newSlot = {
-        ...rawItem,
-        count: addAmount,
-      };
-      const newIdx = result.length;
-      result.push(newSlot);
-
-      if (!availableSlots.has(key)) {
-        availableSlots.set(key, []);
+    } else {
+      if (count < maxStack) {
+        stackMap.set(key, i);
       }
-      availableSlots.get(key).push(newIdx);
-
-      remaining -= addAmount;
     }
   }
 
-  return result;
+  return inv;
 }
 
 /**
@@ -598,8 +595,48 @@ export function consolidateInventory(inventory, maxStack = 200) {
  */
 export function addItemToInventory(inventory, newItem, maxStack = 200) {
   if (!newItem) return consolidateInventory(inventory, maxStack);
-  const current = consolidateInventory(inventory, maxStack);
-  return consolidateInventory([...current, newItem], maxStack);
+
+  const inv = consolidateInventory(inventory, maxStack);
+
+  // Stackable ise önce mevcut açık yuvalara eklemeyi dene
+  if (isStackableItem(newItem)) {
+    const key = getStackableKey(newItem);
+    let remaining = Math.max(1, Number(newItem.count) || 1);
+
+    for (let i = 0; i < inv.length; i++) {
+      const item = inv[i];
+      if (item && isStackableItem(item) && getStackableKey(item) === key) {
+        const curCount = Math.max(1, Number(item.count) || 1);
+        const space = maxStack - curCount;
+        if (space > 0) {
+          const add = Math.min(space, remaining);
+          inv[i] = { ...item, count: curCount + add };
+          remaining -= add;
+          if (remaining <= 0) return inv;
+        }
+      }
+    }
+
+    if (remaining > 0) {
+      const emptyIdx = inv.findIndex((it) => it === null || it === undefined);
+      const placed = { ...newItem, count: remaining };
+      if (emptyIdx !== -1) {
+        inv[emptyIdx] = placed;
+      } else {
+        inv.push(placed);
+      }
+      return inv;
+    }
+  }
+
+  // Ekipman: İlk boş yuvaya yerleştir
+  const emptyIdx = inv.findIndex((it) => it === null || it === undefined);
+  if (emptyIdx !== -1) {
+    inv[emptyIdx] = newItem;
+  } else {
+    inv.push(newItem);
+  }
+  return inv;
 }
 
 /**
@@ -793,19 +830,33 @@ export function equipItem(player, item) {
   const currentEquipped = player.equipped || {};
   const oldItem = currentEquipped[slotKey] || null;
 
-  const newInventory = (player.inventory || []).filter((it) => it.instanceId !== item.instanceId);
-  if (oldItem) {
-    newInventory.push(oldItem);
+  const inv = Array.isArray(player.inventory) ? [...player.inventory] : [];
+  while (inv.length < 48) {
+    inv.push(null);
   }
 
-  return {
+  const itemIndex = inv.findIndex((it) => it && it.instanceId === item.instanceId);
+  if (itemIndex !== -1) {
+    inv[itemIndex] = oldItem;
+  } else if (oldItem) {
+    const emptyIdx = inv.findIndex((it) => it === null || it === undefined);
+    if (emptyIdx !== -1) {
+      inv[emptyIdx] = oldItem;
+    } else {
+      inv.push(oldItem);
+    }
+  }
+
+  const updatedPlayer = {
     ...player,
     equipped: {
       ...currentEquipped,
       [slotKey]: item,
     },
-    inventory: newInventory,
+    inventory: inv,
   };
+
+  return calculatePlayerStats(updatedPlayer);
 }
 
 /**
@@ -818,13 +869,25 @@ export function unequipItem(player, slotKey) {
   const newEquipped = { ...player.equipped };
   delete newEquipped[slotKey];
 
-  const newInventory = [...(player.inventory || []), itemToUnequip];
+  const inv = Array.isArray(player.inventory) ? [...player.inventory] : [];
+  while (inv.length < 48) {
+    inv.push(null);
+  }
 
-  return {
+  const emptyIdx = inv.findIndex((it) => it === null || it === undefined);
+  if (emptyIdx !== -1) {
+    inv[emptyIdx] = itemToUnequip;
+  } else {
+    inv.push(itemToUnequip);
+  }
+
+  const updatedPlayer = {
     ...player,
     equipped: newEquipped,
-    inventory: newInventory,
+    inventory: inv,
   };
+
+  return calculatePlayerStats(updatedPlayer);
 }
 
 /**
@@ -1073,20 +1136,36 @@ export function swapInventorySlots(player, fromIndex, toIndex) {
   if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return player;
 
   const inv = [...player.inventory];
-  while (inv.length <= Math.max(fromIndex, toIndex)) {
+  while (inv.length < 48) {
     inv.push(null);
   }
 
   const itemA = inv[fromIndex] || null;
   const itemB = inv[toIndex] || null;
 
+  // Aynı stackable türdense birleştir (ör. Ay Gümüşü + Ay Gümüşü)
+  if (itemA && itemB && isStackableItem(itemA) && isStackableItem(itemB)) {
+    const keyA = getStackableKey(itemA);
+    const keyB = getStackableKey(itemB);
+    if (keyA === keyB) {
+      const countA = Math.max(1, Number(itemA.count) || 1);
+      const countB = Math.max(1, Number(itemB.count) || 1);
+      const total = countA + countB;
+      if (total <= 200) {
+        inv[toIndex] = { ...itemB, count: total };
+        inv[fromIndex] = null;
+        return { ...player, inventory: inv };
+      } else {
+        inv[toIndex] = { ...itemB, count: 200 };
+        inv[fromIndex] = { ...itemA, count: total - 200 };
+        return { ...player, inventory: inv };
+      }
+    }
+  }
+
+  // Değilse standart yer değiştirme (Swap)
   inv[fromIndex] = itemB;
   inv[toIndex] = itemA;
-
-  // Sonlardaki boşlukları temizle
-  while (inv.length > 0 && inv[inv.length - 1] === null) {
-    inv.pop();
-  }
 
   return {
     ...player,

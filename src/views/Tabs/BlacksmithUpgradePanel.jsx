@@ -215,7 +215,7 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
       <div
         onDragOver={(e) => {
           e.preventDefault();
-          e.dataTransfer.dropEffect = 'copy';
+          e.dataTransfer.dropEffect = 'move';
           setIsDragOverAnvil(true);
         }}
         onDragLeave={() => setIsDragOverAnvil(false)}
@@ -536,13 +536,13 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
                   draggable={true}
                   onDragStart={(e) => {
                     e.dataTransfer.setData('text/plain', item.instanceId);
-                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.effectAllowed = 'all';
                   }}
                   onClick={() => {
                     setSelectedInstanceId(item.instanceId);
                     setLastResult(null);
                   }}
-                  className={`w-full aspect-square rounded-xl border p-1.5 flex flex-col items-center justify-center relative cursor-pointer transition-all duration-200 group ${aura} ${
+                  className={`w-full aspect-square rounded-xl border p-1.5 flex flex-col items-center justify-center relative cursor-grab active:cursor-grabbing transition-all duration-200 select-none group ${aura} ${
                     isSelected
                       ? 'border-amber-400 bg-amber-500/25 ring-2 ring-amber-400 shadow-elven-gold scale-105'
                       : item.isEquippedItem
@@ -552,7 +552,7 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
                 >
                   {/* Kuşanıldı İbaresi (Her zaman ilk sırada yer alan kuşanılmış eşyalarda) */}
                   {item.isEquippedItem && (
-                    <span className="absolute top-1 left-1 font-mono text-[7px] font-black text-emerald-200 bg-emerald-950/95 border border-emerald-400/80 rounded px-1 py-0.2 shadow flex items-center gap-0.5 z-10 select-none">
+                    <span className="absolute top-1 left-1 font-mono text-[7px] font-black text-emerald-200 bg-emerald-950/95 border border-emerald-400/80 rounded px-1 py-0.2 shadow flex items-center gap-0.5 z-10 pointer-events-none select-none">
                       <span>🛡️</span>
                       <span>Kuşanıldı</span>
                     </span>
@@ -561,7 +561,8 @@ export default function BlacksmithUpgradePanel({ player, layoutMode = 'mobile', 
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-10 h-10 object-contain drop-shadow group-hover:scale-110 transition-transform"
+                    draggable={false}
+                    className="w-10 h-10 object-contain drop-shadow group-hover:scale-110 transition-transform pointer-events-none select-none"
                   />
 
                   {/* +0 .. +9 Rozeti */}

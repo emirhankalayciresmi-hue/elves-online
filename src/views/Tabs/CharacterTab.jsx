@@ -356,43 +356,51 @@ export default function CharacterTab({
                     }}
                     onDragOver={(e) => {
                       e.preventDefault();
-                      e.dataTransfer.dropEffect = 'copy';
+                      e.dataTransfer.dropEffect = 'move';
                     }}
                     onDrop={(e) => {
                       e.preventDefault();
                       try {
                         const raw = e.dataTransfer.getData('text/plain');
                         if (raw) {
-                          const data = JSON.parse(raw);
-                          if (data && data.instanceId) {
-                            const it = player?.inventory?.find((x) => x?.instanceId === data.instanceId);
+                          let targetId = null;
+                          try {
+                            const parsed = JSON.parse(raw);
+                            targetId = parsed?.instanceId;
+                          } catch {
+                            targetId = raw;
+                          }
+                          if (targetId) {
+                            const it = (player?.inventory || []).find((x) => x && x.instanceId === targetId);
                             if (it) onEquipItem?.(it);
                           }
                         }
-                      } catch {}
+                      } catch (err) {
+                        console.error('CharacterTab drop error:', err);
+                      }
                     }}
                     title={
                       equippedItem
                         ? `${equippedItem.name} (Çift tıkla: Çıkar • Sağ tık: Menü)`
                         : `${slot.name} (${slot.slotHint || 'Boş'})`
                     }
-                    className={`w-full aspect-square rounded-xl border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${auraClass} ${
+                    className={`w-full aspect-square rounded-xl border transition-colors duration-150 flex flex-col items-center justify-center p-1.5 relative cursor-pointer select-none group ${auraClass} ${
                       isSelected
-                        ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400/80 scale-[1.03]'
+                        ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400/80'
                         : equippedItem
                         ? 'border-amber-500/60 bg-black/70 hover:border-amber-300 hover:bg-black/90 shadow-md'
                         : 'border-dashed border-slate-700/60 bg-black/40 hover:border-slate-500 hover:bg-white/5 opacity-70 hover:opacity-100'
                     }`}
                   >
                     {/* Yuva Numarası */}
-                    <span className="absolute top-1 left-1.5 text-[8px] font-mono text-slate-500 group-hover:text-amber-400 transition-colors">
+                    <span className="absolute top-1 left-1.5 text-[8px] font-mono text-slate-500 group-hover:text-amber-400 transition-colors pointer-events-none select-none">
                       {i + 1}
                     </span>
 
                     {/* Ekipman Yükseltme Rozeti (+0 .. +9) */}
                     {equippedItem && (
                       <span
-                        className={`absolute bottom-1 right-1 font-mono text-[9px] font-black rounded px-1.5 py-0 select-none z-10 border ${
+                        className={`absolute bottom-1 right-1 font-mono text-[9px] font-black rounded px-1.5 py-0 select-none z-10 border pointer-events-none ${
                           plusLevel === 7
                             ? 'text-blue-300 bg-blue-950/95 border-blue-400 shadow-[0_0_8px_rgba(37,99,235,0.9)]'
                             : plusLevel === 8
@@ -407,13 +415,14 @@ export default function CharacterTab({
                     )}
 
                     {equippedItem ? (
-                      <div className="flex flex-col items-center justify-center w-full h-full">
+                      <div className="flex flex-col items-center justify-center w-full h-full pointer-events-none select-none">
                         <img
                           src={equippedItem.image}
                           alt={equippedItem.name}
-                          className="w-10 h-10 sm:w-11 sm:h-11 object-contain drop-shadow transition-transform group-hover:scale-110"
+                          draggable={false}
+                          className="w-10 h-10 sm:w-11 sm:h-11 object-contain drop-shadow transition-transform group-hover:scale-110 pointer-events-none select-none"
                         />
-                        <span className={`text-[9px] font-cinzel text-center line-clamp-1 w-full px-0.5 mt-0.5 font-bold ${
+                        <span className={`text-[9px] font-cinzel text-center line-clamp-1 w-full px-0.5 mt-0.5 font-bold pointer-events-none select-none ${
                           plusLevel === 7 ? 'text-blue-300' :
                           plusLevel === 8 ? 'text-purple-300' :
                           plusLevel >= 9 ? 'text-rose-300' :
@@ -423,7 +432,7 @@ export default function CharacterTab({
                         </span>
                       </div>
                     ) : (
-                      <>
+                      <div className="flex flex-col items-center justify-center pointer-events-none select-none">
                         <div className="w-7 h-7 rounded-full bg-slate-900/90 border border-slate-700/80 flex items-center justify-center text-slate-400 mb-0.5 group-hover:text-amber-300 group-hover:border-amber-500/50 transition-all">
                           <Icon className="w-3.5 h-3.5" />
                         </div>
@@ -433,7 +442,7 @@ export default function CharacterTab({
                         <span className="text-[8px] text-slate-500 font-mono">
                           Boş
                         </span>
-                      </>
+                      </div>
                     )}
                   </div>
                 );
@@ -610,11 +619,11 @@ export default function CharacterTab({
                                 setContextMenu({ isOpen: false, position: { x: 0, y: 0 }, item: null, isEquipped: false, slotKey: null });
                               }
                               const now = Date.now();
-                              if (now - lastCandidateTap.time < 350 && lastCandidateTap.itemId === candidate.instanceId) {
+                              if (now - lastCandidateTapRef.current.time < 450 && lastCandidateTapRef.current.itemId === candidate.instanceId) {
                                 onEquipItem?.(candidate);
-                                setLastCandidateTap({ time: 0, itemId: null });
+                                lastCandidateTapRef.current = { time: 0, itemId: null };
                               } else {
-                                setLastCandidateTap({ time: now, itemId: candidate.instanceId });
+                                lastCandidateTapRef.current = { time: now, itemId: candidate.instanceId };
                               }
                             }}
                             onDoubleClick={() => {

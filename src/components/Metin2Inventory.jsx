@@ -28,6 +28,7 @@ export default function Metin2Inventory({
   });
 
   const lastTapRef = useRef({ time: 0, itemId: null });
+  const lastEquipTimeRef = useRef(0);
   const longPressTimerRef = useRef(null);
   const mousePosRef = useRef({ x: 0, y: 0 });
   const rafIdRef = useRef(null);
@@ -103,11 +104,16 @@ export default function Metin2Inventory({
     { id: 'materials', label: '🔮 Yükseltme Eşyaları' },
   ];
 
-  // Doğrudan Çift Tıkla Kuşanma Yardımcısı (Sıfır gecikme)
+  // Doğrudan Çift Tıkla Kuşanma Yardımcısı (Sıfır gecikme & Çift kuşanma çakışma korumalı)
   const handleItemEquipDirect = (item) => {
     if (!item) return;
+    const now = Date.now();
+    if (now - lastEquipTimeRef.current < 400) {
+      return; // Bu çift tık dizisi zaten işlendi
+    }
+    lastEquipTimeRef.current = now;
+
     if (item.isOre || item.type === 'ore' || item.isMaterial || item.type === 'material') {
-      setPinnedItem((prev) => (prev?.instanceId === item.instanceId ? null : item));
       return;
     }
     if (!isItemForPlayerClass(item, player)) return;
@@ -293,18 +299,19 @@ export default function Metin2Inventory({
                 key={idx}
                 draggable={Boolean(item)}
                 onDragStart={(e) => {
-                  if (!item) return;
-                  const realIndex = inventory.findIndex((it) => it && it.instanceId === item.instanceId);
-                  const effectiveIndex = realIndex !== -1 ? realIndex : absoluteSlotIndex;
+                  if (!item) {
+                    e.preventDefault();
+                    return;
+                  }
                   e.dataTransfer.setData(
                     'text/plain',
                     JSON.stringify({
                       type: 'inventory_slot',
-                      slotIndex: effectiveIndex,
+                      slotIndex: absoluteSlotIndex,
                       instanceId: item.instanceId,
                     })
                   );
-                  e.dataTransfer.effectAllowed = 'move';
+                  e.dataTransfer.effectAllowed = 'all';
                   setDraggedSlotIndex(absoluteSlotIndex);
                 }}
                 onDragEnd={() => {
@@ -312,7 +319,6 @@ export default function Metin2Inventory({
                   setDragOverSlotIndex(null);
                 }}
                 onDragOver={(e) => {
-                  if (isFiltered) return;
                   e.preventDefault();
                   e.dataTransfer.dropEffect = 'move';
                   if (dragOverSlotIndex !== absoluteSlotIndex) {
@@ -325,21 +331,22 @@ export default function Metin2Inventory({
                   }
                 }}
                 onDrop={(e) => {
-                  if (isFiltered) return;
                   e.preventDefault();
                   setDragOverSlotIndex(null);
+                  setDraggedSlotIndex(null);
                   try {
                     const raw = e.dataTransfer.getData('text/plain');
                     if (raw) {
                       const data = JSON.parse(raw);
-                      if (data && data.type === 'inventory_slot' && data.slotIndex !== undefined) {
+                      if (data && data.slotIndex !== undefined) {
                         if (data.slotIndex !== absoluteSlotIndex) {
                           onSwapSlots?.(data.slotIndex, absoluteSlotIndex);
                         }
                       }
                     }
-                  } catch {}
-                  setDraggedSlotIndex(null);
+                  } catch (err) {
+                    console.error('Inventory drop error:', err);
+                  }
                 }}
                 onMouseEnter={(e) => {
                   if (item) {
@@ -369,22 +376,26 @@ export default function Metin2Inventory({
                     });
                   }
                 }}
-                onDoubleClick={() => {
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   handleDoubleClick(item);
                 }}
                 onTouchStart={() => handleTouchStart(item)}
                 onTouchEnd={handleTouchEnd}
-                className={`w-full aspect-square max-w-[100px] max-h-[100px] mx-auto rounded-lg border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${auraClass} ${
+                className={`w-full aspect-square max-w-[100px] max-h-[100px] mx-auto rounded-lg border transition-colors duration-150 flex flex-col items-center justify-center p-1.5 relative select-none group ${auraClass} ${
+                  item ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+                } ${
                   isBeingDragged
-                    ? 'opacity-40 scale-95 border-amber-400 border-dashed'
+                    ? 'opacity-40 border-amber-400 border-dashed'
                     : isDragOver
-                    ? 'border-2 border-emerald-400 bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.7)] scale-105'
+                    ? 'border-2 border-emerald-400 bg-emerald-500/25 ring-2 ring-emerald-400/80 shadow-[0_0_15px_rgba(16,185,129,0.8)]'
                     : isNewDrop
-                    ? 'border-2 border-yellow-400 ring-2 ring-amber-300 bg-amber-500/25 shadow-[0_0_18px_rgba(250,204,21,0.9)] animate-pulse scale-[1.03]'
+                    ? 'border-2 border-yellow-400 ring-2 ring-amber-300 bg-amber-500/25 shadow-[0_0_18px_rgba(250,204,21,0.9)] animate-pulse'
                     : isPinned
-                    ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400 scale-[1.03]'
+                    ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400'
                     : isHovered
-                    ? 'border-amber-300 bg-amber-500/15 ring-1 ring-amber-300 scale-[1.02]'
+                    ? 'border-amber-300 bg-amber-500/15 ring-1 ring-amber-300'
                     : isClassLocked
                     ? 'border-rose-900/60 bg-rose-950/20 hover:border-rose-600/60'
                     : item?.isOre || item?.type === 'ore'
@@ -395,14 +406,14 @@ export default function Metin2Inventory({
                 }`}
               >
                 {/* Slot index number */}
-                <span className="absolute top-1 left-1.5 text-[8px] font-mono text-slate-500 group-hover:text-amber-400 transition-colors">
+                <span className="absolute top-1 left-1.5 text-[8px] font-mono text-slate-500 group-hover:text-amber-400 transition-colors pointer-events-none select-none">
                   {absoluteSlotIndex + 1}
                 </span>
 
                 {/* Permanent Class Lock Badge */}
                 {isClassLocked && (
                   <span
-                    className="absolute top-1 right-1 text-[7px] font-mono font-bold text-rose-300 bg-rose-950/95 border border-rose-500/80 rounded px-1 py-0.2 shadow flex items-center gap-0.5 z-10"
+                    className="absolute top-1 right-1 text-[7px] font-mono font-bold text-rose-300 bg-rose-950/95 border border-rose-500/80 rounded px-1 py-0.2 shadow flex items-center gap-0.5 z-10 pointer-events-none select-none"
                     title={`Yalnızca ${item.className || 'diğer sınıf'} kuşanabilir`}
                   >
                     <Lock className="w-2.5 h-2.5 text-rose-400" />
@@ -412,21 +423,21 @@ export default function Metin2Inventory({
 
                 {/* New Drop Glowing Badge */}
                 {!isClassLocked && isNewDrop && (
-                  <span className="absolute top-1 right-1 text-[7px] font-mono font-bold text-amber-200 bg-amber-950/95 border border-yellow-400 rounded px-1 py-0.2 shadow animate-pulse">
+                  <span className="absolute top-1 right-1 text-[7px] font-mono font-bold text-amber-200 bg-amber-950/95 border border-yellow-400 rounded px-1 py-0.2 shadow animate-pulse pointer-events-none select-none">
                     ✨ YENİ
                   </span>
                 )}
 
                 {/* Ore Distinction Badge */}
                 {!isNewDrop && !isClassLocked && (item?.isOre || item?.type === 'ore') && (
-                  <span className="absolute top-1 right-1 text-[7px] font-mono font-bold text-emerald-300 bg-emerald-950/95 border border-emerald-500/50 rounded px-1 py-0.2 shadow">
+                  <span className="absolute top-1 right-1 text-[7px] font-mono font-bold text-emerald-300 bg-emerald-950/95 border border-emerald-500/50 rounded px-1 py-0.2 shadow pointer-events-none select-none">
                     💎 Cevher
                   </span>
                 )}
 
                 {/* Material Distinction Badge */}
                 {!isNewDrop && !isClassLocked && (item?.isMaterial || item?.type === 'material') && (
-                  <span className="absolute top-1 right-1 text-[7px] font-mono font-bold text-indigo-300 bg-indigo-950/95 border border-indigo-500/50 rounded px-1 py-0.2 shadow">
+                  <span className="absolute top-1 right-1 text-[7px] font-mono font-bold text-indigo-300 bg-indigo-950/95 border border-indigo-500/50 rounded px-1 py-0.2 shadow pointer-events-none select-none">
                     🔮 Materyal
                   </span>
                 )}
@@ -434,7 +445,7 @@ export default function Metin2Inventory({
                 {/* Ekipman Yükseltme Rozeti (+0 .. +9) */}
                 {isEquip && (
                   <span
-                    className={`absolute bottom-1 right-1 font-mono text-[9px] font-black rounded px-1.5 py-0 select-none z-10 border ${
+                    className={`absolute bottom-1 right-1 font-mono text-[9px] font-black rounded px-1.5 py-0 select-none z-10 border pointer-events-none ${
                       plusLevel === 7
                         ? 'text-blue-300 bg-blue-950/95 border-blue-400 shadow-[0_0_8px_rgba(37,99,235,0.9)]'
                         : plusLevel === 8
@@ -450,21 +461,22 @@ export default function Metin2Inventory({
 
                 {/* Metin2 Yığın Sayacı (Maks 200 Adet) - 1, 2, 3, 4, 5... 200 */}
                 {item && !isEquip && ((item.isOre || item.type === 'ore' || item.isMaterial || item.type === 'material') || (Number(item.count) || 1) > 1) && (
-                  <span className="absolute bottom-1 right-1 font-mono text-[10px] font-black text-amber-200 bg-black/95 border border-amber-500/80 rounded px-1.5 py-0 shadow-[0_0_8px_rgba(0,0,0,0.95)] z-10 select-none">
+                  <span className="absolute bottom-1 right-1 font-mono text-[10px] font-black text-amber-200 bg-black/95 border border-amber-500/80 rounded px-1.5 py-0 shadow-[0_0_8px_rgba(0,0,0,0.95)] z-10 select-none pointer-events-none">
                     {item.count || 1}
                   </span>
                 )}
 
                 {item ? (
-                  <div className="flex flex-col items-center justify-center w-full h-full">
+                  <div className="flex flex-col items-center justify-center w-full h-full pointer-events-none select-none">
                     <img
                       src={item.image}
                       alt={item.name}
-                      className={`w-11 h-11 sm:w-12 sm:h-12 object-contain drop-shadow transition-transform group-hover:scale-110 ${
+                      draggable={false}
+                      className={`w-11 h-11 sm:w-12 sm:h-12 object-contain drop-shadow transition-transform group-hover:scale-110 pointer-events-none select-none ${
                         isClassLocked ? 'opacity-70 grayscale-[20%]' : ''
                       }`}
                     />
-                    <span className={`text-[9px] font-cinzel text-center line-clamp-1 w-full px-0.5 mt-0.5 ${
+                    <span className={`text-[9px] font-cinzel text-center line-clamp-1 w-full px-0.5 mt-0.5 pointer-events-none select-none ${
                       isClassLocked
                         ? 'text-rose-300/80 font-medium'
                         : item.isOre || item.type === 'ore'
@@ -481,7 +493,7 @@ export default function Metin2Inventory({
                     </span>
                   </div>
                 ) : (
-                  <span className="text-[10px] text-slate-600 font-mono">
+                  <span className="text-[10px] text-slate-600 font-mono pointer-events-none select-none">
                     Boş
                   </span>
                 )}
