@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Shield, Trash2, ArrowRightLeft } from 'lucide-react';
+import { Sparkles, Shield, Trash2, ArrowRightLeft, Lock } from 'lucide-react';
 import ElvenButton from './ElvenButton';
 
 export function ItemTooltipCard({
@@ -10,6 +10,7 @@ export function ItemTooltipCard({
   onUnequip,
   onDiscard,
   isPinned = false,
+  isClassLocked = false,
   onClose,
 }) {
   if (!item) return null;
@@ -87,6 +88,14 @@ export function ItemTooltipCard({
         )}
       </div>
 
+      {/* Sınıf Kısıtlaması Uyarısı */}
+      {isClassLocked && (
+        <div className="p-1.5 rounded bg-rose-950/80 border border-rose-500/50 text-[10px] text-rose-300 font-mono flex items-center gap-1.5">
+          <Lock className="w-3.5 h-3.5 text-rose-400 flex-shrink-0" />
+          <span>Yalnızca <strong>{item.className || 'Farklı Sınıf'}</strong> kuşanabilir!</span>
+        </div>
+      )}
+
       {/* Description / Lore */}
       <p className="text-xs text-slate-300 font-cormorant leading-relaxed italic border-t border-white/5 pt-1.5">
         "{item.desc}"
@@ -122,6 +131,15 @@ export function ItemTooltipCard({
             >
               Ekipmanı Çıkar
             </ElvenButton>
+          ) : isClassLocked ? (
+            <button
+              type="button"
+              disabled
+              className="w-full py-1.5 px-3 rounded bg-rose-950/40 border border-rose-800/40 text-rose-300/70 font-cinzel text-xs font-bold flex items-center justify-center gap-1.5 cursor-not-allowed opacity-60"
+            >
+              <Lock className="w-3.5 h-3.5 text-rose-400" />
+              <span>Farklı Sınıf (Giyilemez)</span>
+            </button>
           ) : (
             <ElvenButton
               size="sm"
@@ -163,6 +181,11 @@ export function ItemTooltipCard({
             Kapat
           </button>
         </div>
+      ) : isClassLocked ? (
+        <div className="pt-1 text-[9px] font-mono text-rose-400/90 border-t border-white/5 text-center flex items-center justify-center gap-1">
+          <Lock className="w-3 h-3 text-rose-400" />
+          <span>Bu eşyayı sınıfınız kuşanamaz</span>
+        </div>
       ) : (
         <div className="pt-1 text-[9px] font-mono text-amber-400/80 border-t border-white/5 text-center">
           {item.isOre || item.type === 'ore'
@@ -179,6 +202,7 @@ export default function Metin2ComparisonTooltip({
   comparedItem,
   isEquipped = false,
   isPinned = false,
+  isClassLocked = false,
   mousePos = null,
   onEquip,
   onUnequip,
@@ -224,6 +248,7 @@ export default function Metin2ComparisonTooltip({
               onUnequip={onUnequip}
               onDiscard={onDiscard}
               isPinned={isPinned}
+              isClassLocked={isClassLocked}
               onClose={onClose}
             />
           </div>
@@ -281,6 +306,7 @@ export default function Metin2ComparisonTooltip({
             onUnequip={onUnequip}
             onDiscard={onDiscard}
             isPinned={isPinned}
+            isClassLocked={isClassLocked}
             onClose={onClose}
           />
         </div>

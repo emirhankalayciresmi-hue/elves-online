@@ -4,7 +4,7 @@ import {
   Crosshair, ShieldCheck, Flame, Snowflake, CloudLightning, Activity, Target,
   Crown, Castle, BookOpen, Layers, Skull, Users, ChevronRight, Compass,
   RotateCcw, ShieldAlert, Gem, CircleDot, Hand, Footprints, Wind, Feather,
-  Coins, Info, ArrowDownCircle
+  Coins, Info, ArrowDownCircle, Check, ArrowRightLeft
 } from 'lucide-react';
 import OrnateFrame from '../../components/OrnateFrame';
 import {
@@ -16,6 +16,7 @@ import {
 } from '../../config/gameData';
 import { calculateBadgeStats } from '../../config/questData';
 import { getRequiredExp } from '../../config/dungeonData';
+import { isItemForPlayerClass, isItemForSlot } from '../../config/itemsData';
 
 const SLOT_ICONS = {
   helmet: Crown,
@@ -84,6 +85,11 @@ export default function CharacterTab({
   // Seçili yuva ve kuşanılan eşya
   const selectedSlot = EQUIPMENT_SLOTS.find((s) => s.id === selectedSlotId) || EQUIPMENT_SLOTS[0];
   const selectedEquippedItem = player?.equipped?.[selectedSlot.id] || null;
+
+  // Çantadaki bu yuvaya ve oyuncunun kendi sınıfına uygun aday eşyalar (Yabancı sınıflar elenir)
+  const candidateItems = (player?.inventory || []).filter(
+    (item) => isItemForSlot(item, selectedSlot.id) && isItemForPlayerClass(item, player)
+  );
 
   return (
     <div className={`space-y-4 pb-20 animate-fadeIn ${isPC ? 'w-full' : ''}`}>
@@ -373,7 +379,7 @@ export default function CharacterTab({
               </div>
 
               {selectedEquippedItem ? (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg bg-black/90 border border-amber-500/50 p-1 flex items-center justify-center flex-shrink-0 shadow-inner">
                       <img
@@ -413,15 +419,116 @@ export default function CharacterTab({
                       <span>Ekipmanı Çıkar (Çantaya Gönder)</span>
                     </button>
                   )}
+
+                  {/* Çantada Alternatif Eşyalar Varsa Listele (Değiştirme Özelliği) */}
+                  {candidateItems.length > 0 && (
+                    <div className="pt-2.5 border-t border-white/10 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-amber-300 font-bold flex items-center gap-1.5">
+                          <ArrowRightLeft className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Çantanızdaki Alternatif {selectedSlot.name} Eşyaları ({candidateItems.length})</span>
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-mono">Değiştirmek için tıkla</span>
+                      </div>
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        {candidateItems.map((candidate) => (
+                          <div
+                            key={candidate.instanceId || candidate.id}
+                            className="p-2 rounded-lg bg-black/60 border border-amber-500/30 hover:border-amber-400 flex items-center justify-between gap-2 transition-all group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <img
+                                src={candidate.image}
+                                alt={candidate.name}
+                                className="w-8 h-8 object-contain drop-shadow"
+                              />
+                              <div className="min-w-0">
+                                <p className="text-xs font-cinzel font-bold text-amber-100 group-hover:text-amber-300 truncate">
+                                  {candidate.name}
+                                </p>
+                                <p className="text-[9px] font-mono text-emerald-400">
+                                  {candidate.setName || 'Set Eşyası'} • {candidate.className}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => onEquipItem && onEquipItem(candidate)}
+                              className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/40 border border-amber-500/50 text-amber-200 hover:text-white font-cinzel text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer flex-shrink-0"
+                            >
+                              <ArrowRightLeft className="w-3 h-3" />
+                              <span>Değiştir</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
-                <div className="text-center py-3 px-2 bg-black/40 rounded-lg border border-white/5 space-y-1">
-                  <p className="text-xs font-cinzel text-amber-200/90 font-bold">
-                    Bu yuvaya bir {selectedSlot.name.toLowerCase()} takılabilir.
-                  </p>
-                  <p className="text-[11px] text-slate-400 font-cormorant">
-                    {selectedSlot.slotHint || 'Zindanlardan ganimet düşürerek veya pazardan temin edip Envanter sekmesinden kuşanabilirsiniz.'}
-                  </p>
+                <div className="space-y-3">
+                  <div className="text-center py-2.5 px-2 bg-black/40 rounded-lg border border-white/5 space-y-0.5">
+                    <p className="text-xs font-cinzel text-amber-200/90 font-bold">
+                      Bu yuvaya bir {selectedSlot.name.toLowerCase()} takılabilir.
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-cormorant">
+                      {selectedSlot.slotHint || 'Kadim elven kuşamı'}
+                    </p>
+                  </div>
+
+                  {/* Yuva Boşken Çantada Uygun Eşyalar Varsa Hemen Kuşan Listesi */}
+                  {candidateItems.length > 0 ? (
+                    <div className="space-y-2 pt-1 border-t border-white/10">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-emerald-300 font-bold flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Çantanızdaki {selectedSlot.name} Eşyaları ({candidateItems.length})</span>
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-mono">Kuşanmak için tıkla</span>
+                      </div>
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        {candidateItems.map((candidate) => (
+                          <div
+                            key={candidate.instanceId || candidate.id}
+                            className="p-2 rounded-lg bg-black/60 border border-emerald-500/30 hover:border-emerald-400 flex items-center justify-between gap-2 transition-all group"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <img
+                                src={candidate.image}
+                                alt={candidate.name}
+                                className="w-8 h-8 object-contain drop-shadow"
+                              />
+                              <div className="min-w-0">
+                                <p className="text-xs font-cinzel font-bold text-amber-100 group-hover:text-emerald-300 truncate">
+                                  {candidate.name}
+                                </p>
+                                <p className="text-[9px] font-mono text-emerald-400">
+                                  {candidate.setName || 'Set Eşyası'} • {candidate.className}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => onEquipItem && onEquipItem(candidate)}
+                              className="px-3 py-1 rounded bg-emerald-600/30 hover:bg-emerald-600/60 border border-emerald-500/50 text-emerald-200 hover:text-white font-cinzel text-xs font-bold transition-all flex items-center gap-1 cursor-pointer flex-shrink-0"
+                            >
+                              <Check className="w-3 h-3 text-emerald-300" />
+                              <span>Kuşan</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 px-2 bg-black/40 rounded-lg border border-white/5 space-y-1">
+                      <p className="text-xs font-cinzel text-amber-200/80">
+                        Çantanızda bu yuvaya uygun bir <strong>{currentClass.name} {selectedSlot.name.toLowerCase()}</strong> bulunmuyor.
+                      </p>
+                      <p className="text-[11px] text-slate-400 font-cormorant">
+                        Zindanlardan ganimet düşürerek veya pazardan temin edebilirsiniz.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

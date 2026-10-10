@@ -3,7 +3,7 @@
 // Pure Domain Logic: Zero React / UI or network dependencies.
 
 import { calculateLevelAndExp, rollDungeonReward, DUNGEON_GROUPS } from '@/core/config/dungeonData';
-import { rollDungeonEquipmentDrops } from '@/core/config/itemsData';
+import { rollDungeonEquipmentDrops, isItemForPlayerClass } from '@/core/config/itemsData';
 import { ELVEN_MINES, MINING_DURATION_SECONDS, rollMiningRewards } from '@/core/config/miningData';
 import {
   ensurePlayerQuestState,
@@ -564,6 +564,11 @@ export function executeBossVictory(player, boss, rewards) {
  */
 export function equipItem(player, item) {
   if (!player || !item) return player;
+
+  // Sınıf Kısıtlaması: Oyuncu yalnızca kendi sınıfına ait ekipmanları kuşanabilir
+  if (!isItemForPlayerClass(item, player)) {
+    return player;
+  }
 
   const slotKey = item.slot;
   const currentEquipped = player.equipped || {};

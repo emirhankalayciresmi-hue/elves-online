@@ -574,3 +574,82 @@ export function rollDungeonEquipmentDrops(dungeonId = 1, playerClassId = 'warrio
     droppedAt: new Date().toISOString(),
   }];
 }
+
+/**
+ * Verilen eşyanın oyuncunun sınıfına ait olup olmadığını doğrular.
+ * Maden, cevher ve iksir gibi genel materyaller tüm sınıflar için serbesttir.
+ * Ekipmanlarda ise Savaşçı, Ninja ve Büyücü sınıfları ayrıştırılır.
+ */
+export function isItemForPlayerClass(item, player) {
+  if (!item) return false;
+  // Maden, cevher, iksir veya genel materyallerde sınıf kısıtlaması yoktur
+  if (item.isOre || item.type === 'ore' || item.type === 'potion') return true;
+  if (!item.classId && !item.className && !item.setKey) return true;
+
+  const playerClass = (player?.classId || '').toLowerCase();
+  const playerClassName = (player?.className || '').toLowerCase();
+
+  const itemClass = (item.classId || '').toLowerCase();
+  const itemSet = (item.setKey || '').toLowerCase();
+  const itemClassName = (item.className || '').toLowerCase();
+
+  // Ninja / Assassin alias desteği
+  const isPlayerNinja =
+    playerClass === 'ninja' ||
+    playerClass === 'assassin' ||
+    playerClassName.includes('ninja');
+
+  if (isPlayerNinja) {
+    return (
+      itemClass === 'ninja' ||
+      itemClass === 'assassin' ||
+      itemSet === 'assassin' ||
+      itemSet === 'ninja' ||
+      itemClassName.includes('ninja')
+    );
+  }
+
+  // Savaşçı desteği
+  const isPlayerWarrior =
+    playerClass === 'warrior' ||
+    playerClassName.includes('savaşçı');
+
+  if (isPlayerWarrior) {
+    return (
+      itemClass === 'warrior' ||
+      itemSet === 'warrior' ||
+      itemClassName.includes('savaşçı')
+    );
+  }
+
+  // Büyücü desteği
+  const isPlayerMage =
+    playerClass === 'mage' ||
+    playerClassName.includes('büyücü');
+
+  if (isPlayerMage) {
+    return (
+      itemClass === 'mage' ||
+      itemSet === 'mage' ||
+      itemClassName.includes('büyücü')
+    );
+  }
+
+  return itemClass === playerClass || itemClassName === playerClassName;
+}
+
+/**
+ * Verilen eşyanın ilgili ekipman yuvasına uyup uymadığını kontrol eder.
+ */
+export function isItemForSlot(item, slotId) {
+  if (!item || !slotId) return false;
+  if (item.isOre || item.type === 'ore') return false;
+
+  // Yüzük 1 ve Yüzük 2 yuvaları birbirinin eşyalarını da kabul edebilir
+  if (slotId === 'ring1' || slotId === 'ring2') {
+    return item.slot === 'ring1' || item.slot === 'ring2' || item.slot === 'ring';
+  }
+
+  return item.slot === slotId;
+}
+

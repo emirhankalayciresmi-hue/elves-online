@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Package, ChevronLeft, ChevronRight, Layers, Sparkles } from 'lucide-react';
+import { Package, ChevronLeft, ChevronRight, Layers, Sparkles, Lock } from 'lucide-react';
 import OrnateFrame from '@/components/OrnateFrame';
 import Metin2ComparisonTooltip from '@/components/ItemTooltip';
+import { isItemForPlayerClass } from '@/core/config/itemsData';
 
 export default function Metin2Inventory({
   player,
@@ -61,8 +62,10 @@ export default function Metin2Inventory({
       return;
     }
 
+    const isClassLocked = Boolean(item && !isItemForPlayerClass(item, player));
+
     const now = Date.now();
-    if (now - lastTap.time < 350 && lastTap.itemId === item.instanceId) {
+    if (!isClassLocked && now - lastTap.time < 350 && lastTap.itemId === item.instanceId) {
       // 2nd fast click -> DIRECT EQUIP!
       onEquipItem?.(item);
       setPinnedItem(null);
@@ -77,7 +80,7 @@ export default function Metin2Inventory({
 
   // Long press for mobile touch
   const handleTouchStart = (item) => {
-    if (!item) return;
+    if (!item || !isItemForPlayerClass(item, player)) return;
     longPressTimerRef.current = setTimeout(() => {
       onEquipItem?.(item);
       setPinnedItem(null);
@@ -166,6 +169,7 @@ export default function Metin2Inventory({
             const isHovered = hoveredItem?.instanceId === item?.instanceId;
             const isPinned = pinnedItem?.instanceId === item?.instanceId;
             const isNewDrop = Boolean(item && player?.newDungeonDrops?.includes(item?.instanceId));
+            const isClassLocked = Boolean(item && !isItemForPlayerClass(item, player));
             const absoluteSlotIndex = startIndex + idx;
 
             return (
@@ -188,7 +192,11 @@ export default function Metin2Inventory({
                   if (item) setMousePos({ x: e.clientX, y: e.clientY });
                   handleSlotClick(item);
                 }}
-                onDoubleClick={() => item && onEquipItem?.(item)}
+                onDoubleClick={() => {
+                  if (item && !isClassLocked) {
+                    onEquipItem?.(item);
+                  }
+                }}
                 onTouchStart={() => handleTouchStart(item)}
                 onTouchEnd={handleTouchEnd}
                 className={`w-full aspect-square max-w-[100px] max-h-[100px] mx-auto rounded-lg border transition-all duration-200 flex flex-col items-center justify-center p-1.5 relative cursor-pointer group ${
@@ -198,6 +206,8 @@ export default function Metin2Inventory({
                     ? 'border-amber-400 bg-amber-500/25 shadow-elven-gold ring-2 ring-amber-400 scale-[1.03]'
                     : isHovered
                     ? 'border-amber-300 bg-amber-500/15 ring-1 ring-amber-300 scale-[1.02]'
+                    : isClassLocked
+                    ? 'border-rose-900/60 bg-rose-950/20 hover:border-rose-600/60'
                     : item?.isOre || item?.type === 'ore'
                     ? 'border-emerald-500/60 bg-emerald-950/30 hover:border-emerald-300 hover:bg-emerald-950/50'
                     : item
@@ -210,15 +220,26 @@ export default function Metin2Inventory({
                   {absoluteSlotIndex + 1}
                 </span>
 
+                {/* Permanent Class Lock Badge */}
+                {isClassLocked && (
+                  <span
+                    className="absolute top-1 right-1 text-[7px] font-mono font-bold text-rose-300 bg-rose-950/95 border border-rose-500/80 rounded px-1 py-0.2 shadow flex items-center gap-0.5 z-10"
+                    title={`Yalnızca ${item.className || 'diğer sınıf'} kuşanabilir`}
+                  >
+                    <Lock className="w-2.5 h-2.5 text-rose-400" />
+                    <span>Kilit</span>
+                  </span>
+                )}
+
                 {/* New Drop Glowing Badge */}
-                {isNewDrop && (
+                {!isClassLocked && isNewDrop && (
                   <span className="absolute top-1 right-1 text-[7px] font-mono font-bold text-amber-200 bg-amber-950/95 border border-yellow-400 rounded px-1 py-0.2 shadow animate-pulse">
                     ✨ YENİ
                   </span>
                 )}
 
                 {/* Ore Distinction Badge */}
-                {!isNewDrop && (item?.isOre || item?.type === 'ore') && (
+                {!isNewDrop && !isClassLocked && (item?.isOre || item?.type === 'ore') && (
                   <span className="absolute top-1 right-1 text-[7px] font-mono font-bold text-emerald-300 bg-emerald-950/95 border border-emerald-500/50 rounded px-1 py-0.2 shadow">
                     💎 Cevher
                   </span>
@@ -229,10 +250,16 @@ export default function Metin2Inventory({
                     <img
                       src={item.image}
                       alt={item.name}
-                      className="w-11 h-11 sm:w-12 sm:h-12 object-contain drop-shadow transition-transform group-hover:scale-110"
+                      className={`w-11 h-11 sm:w-12 sm:h-12 object-contain drop-shadow transition-transform group-hover:scale-110 ${
+                        isClassLocked ? 'opacity-70 grayscale-[20%]' : ''
+                      }`}
                     />
                     <span className={`text-[9px] font-cinzel text-center line-clamp-1 w-full px-0.5 mt-0.5 ${
-                      item.isOre || item.type === 'ore' ? 'text-emerald-200 font-semibold' : 'text-amber-100'
+                      isClassLocked
+                        ? 'text-rose-300/80 font-medium'
+                        : item.isOre || item.type === 'ore'
+                        ? 'text-emerald-200 font-semibold'
+                        : 'text-amber-100'
                     }`}>
                       {item.name}
                     </span>
@@ -255,11 +282,14 @@ export default function Metin2Inventory({
           comparedItem={comparedEquippedItem}
           isEquipped={false}
           isPinned={Boolean(pinnedItem)}
+          isClassLocked={Boolean(displayedItem && !isItemForPlayerClass(displayedItem, player))}
           mousePos={mousePos}
           onEquip={(it) => {
-            onEquipItem?.(it);
-            setPinnedItem(null);
-            setHoveredItem(null);
+            if (isItemForPlayerClass(it, player)) {
+              onEquipItem?.(it);
+              setPinnedItem(null);
+              setHoveredItem(null);
+            }
           }}
           onDiscard={(instId) => {
             onDiscardItem?.(instId);
