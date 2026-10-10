@@ -4,6 +4,7 @@ import OrnateFrame from '@/components/OrnateFrame';
 import Metin2ComparisonTooltip from '@/components/ItemTooltip';
 import ItemContextMenu from '@/components/ItemContextMenu';
 import { isItemForPlayerClass } from '@/core/config/itemsData';
+import { consolidateInventory } from '@/domain/gameEngine';
 
 export default function Metin2Inventory({
   player,
@@ -47,7 +48,7 @@ export default function Metin2Inventory({
     });
   };
 
-  const inventory = Array.isArray(player?.inventory) ? player.inventory : [];
+  const inventory = consolidateInventory(Array.isArray(player?.inventory) ? player.inventory : []);
   const equipped = player?.equipped || {};
 
   const SLOTS_PER_PAGE = 16; // 4x4 grid

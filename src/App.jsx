@@ -37,6 +37,7 @@ import {
   discardOrSellItem,
   allocateStatPoint,
   resetStatPoints,
+  consolidateInventory,
 } from '@/domain/gameEngine';
 import { useGameTimers } from '@/hooks/useGameTimers';
 import MiniChatDock from '@/components/MiniChatDock';
@@ -125,6 +126,9 @@ export default function App() {
         equipped: {},
         ...parsed,
       };
+      if (Array.isArray(basePlayer.inventory)) {
+        basePlayer.inventory = consolidateInventory(basePlayer.inventory);
+      }
       if (!parsed.allocatedStats) {
         basePlayer.allocatedStats = { hp: 0, str: 0, agi: 0, int: 0 };
         basePlayer.maxHp = 500;
@@ -153,8 +157,11 @@ export default function App() {
   const savePlayerToStorage = useCallback(
     (updated) => {
       if (!updated) return;
-      storageManager.setItem(CHAR_STORAGE_KEY, updated);
-      debouncedSyncPlayerToCloud(updated, currentUser?.id);
+      const cleanPlayer = Array.isArray(updated.inventory)
+        ? { ...updated, inventory: consolidateInventory(updated.inventory) }
+        : updated;
+      storageManager.setItem(CHAR_STORAGE_KEY, cleanPlayer);
+      debouncedSyncPlayerToCloud(cleanPlayer, currentUser?.id);
     },
     [currentUser]
   );

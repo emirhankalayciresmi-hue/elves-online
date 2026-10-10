@@ -488,66 +488,118 @@ export function clearNewDungeonDrops(player) {
 }
 
 /**
+ * Eşyanın yığınlanabilir (maden cevheri, yükseltme taşı, zindan materyali, iksir vb.) olup olmadığını belirler.
+ * Ekipmanlar (silah, miğfer, zırh, kalkan, takı vb.) asla yığınlanamaz, daima tekil slot kaplar.
+ */
+export function isStackableItem(item) {
+  if (!item) return false;
+  const isEquipment = Boolean(
+    !item.isOre &&
+    item.type !== 'ore' &&
+    item.slot !== 'ore' &&
+    !item.isMaterial &&
+    item.type !== 'material' &&
+    !item.isUpgradeStone &&
+    (item.slot || item.setKey || item.slotName)
+  );
+  if (isEquipment) return false;
+
+  return Boolean(
+    item.isOre ||
+    item.type === 'ore' ||
+    item.slot === 'ore' ||
+    item.isMaterial ||
+    item.type === 'material' ||
+    item.isUpgradeStone ||
+    item.stackable ||
+    (item.count !== undefined && item.count !== null && Number(item.count) > 0)
+  );
+}
+
+/**
+ * Yığınlanabilir eşyalar için benzersiz kümeleme anahtarı.
+ * Maden cevherlerinde (ör. 'Ay Gümüşü') ID veya format farkı olsa bile isimden 'ore_' ön ekiyle birleştirir.
+ */
+export function getStackableKey(item) {
+  if (!item) return '';
+  if (item.isOre || item.type === 'ore' || item.slot === 'ore') {
+    return `ore_${item.name || item.id}`;
+  }
+  return item.id || item.name || 'item';
+}
+
+/**
+ * Envanteri Otomatik Konsolide Etme & Birleştirme (Maks. 200 Adet Yığın)
+ * Envanterdeki aynı maden veya materyalleri otomatik olarak tek yuvaya toplar, sayılarını toplar.
+ * 200'ü aşan durumlar olursa yeni bir yuvaya taşır. Ekipmanlara dokunmaz.
+ */
+export function consolidateInventory(inventory, maxStack = 200) {
+  if (!Array.isArray(inventory)) return [];
+
+  const result = [];
+  const availableSlots = new Map(); // key -> [indices with count < maxStack]
+
+  for (const rawItem of inventory) {
+    if (!rawItem) continue;
+
+    if (!isStackableItem(rawItem)) {
+      result.push(rawItem);
+      continue;
+    }
+
+    const key = getStackableKey(rawItem);
+    let remaining = Math.max(1, Number(rawItem.count) || 1);
+
+    // 1. Mevcut açık yuvaya ekle
+    if (availableSlots.has(key)) {
+      const slotIndices = availableSlots.get(key);
+      for (const idx of slotIndices) {
+        const existing = result[idx];
+        const existingCount = Math.max(1, Number(existing.count) || 1);
+        const space = maxStack - existingCount;
+        if (space > 0) {
+          const addAmount = Math.min(space, remaining);
+          result[idx] = {
+            ...existing,
+            count: existingCount + addAmount,
+          };
+          remaining -= addAmount;
+          if (remaining <= 0) break;
+        }
+      }
+    }
+
+    // 2. Kalan varsa yeni slot aç
+    while (remaining > 0) {
+      const addAmount = Math.min(maxStack, remaining);
+      const newSlot = {
+        ...rawItem,
+        count: addAmount,
+      };
+      const newIdx = result.length;
+      result.push(newSlot);
+
+      if (!availableSlots.has(key)) {
+        availableSlots.set(key, []);
+      }
+      availableSlots.get(key).push(newIdx);
+
+      remaining -= addAmount;
+    }
+  }
+
+  return result;
+}
+
+/**
  * Envantere Eşya Ekleme Mantığı (Maksimum 200 Adet Yığın / Stacking)
  * Maden cevherleri ve materyaller 200 adede kadar aynı yuvada birikir.
  * Ekipmanlar ise her zaman tekil slot kaplar.
  */
 export function addItemToInventory(inventory, newItem, maxStack = 200) {
-  if (!newItem) return Array.isArray(inventory) ? inventory : [];
-
-  const currentInventory = Array.isArray(inventory) ? [...inventory] : [];
-  const isStackable = Boolean(
-    newItem.isOre ||
-    newItem.type === 'ore' ||
-    newItem.isMaterial ||
-    newItem.type === 'material' ||
-    newItem.stackable
-  );
-
-  if (!isStackable) {
-    // Ekipman vb. tekil eşyalar
-    return [...currentInventory, { ...newItem, count: 1 }];
-  }
-
-  let remaining = Number(newItem.count) > 0 ? Number(newItem.count) : 1;
-
-  // 1. Önce aynı eşyadan var olan ve 200'den az olan yuvayı bul ve üzerine ekle
-  for (let i = 0; i < currentInventory.length; i++) {
-    const existing = currentInventory[i];
-    if (!existing) continue;
-
-    const isSameItem =
-      (existing.id && existing.id === newItem.id) ||
-      (existing.name && existing.name === newItem.name && (existing.isOre || existing.isMaterial));
-
-    if (isSameItem) {
-      const currentCount = Number(existing.count) > 0 ? Number(existing.count) : 1;
-      if (currentCount < maxStack) {
-        const space = maxStack - currentCount;
-        const addAmount = Math.min(space, remaining);
-        currentInventory[i] = {
-          ...existing,
-          count: currentCount + addAmount,
-        };
-        remaining -= addAmount;
-        if (remaining <= 0) break;
-      }
-    }
-  }
-
-  // 2. Taşma varsa veya hiç yuva yoksa yeni slot açarak ekle
-  while (remaining > 0) {
-    const addAmount = Math.min(maxStack, remaining);
-    const newSlotItem = {
-      ...newItem,
-      instanceId: `${newItem.id || 'item'}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      count: addAmount,
-    };
-    currentInventory.push(newSlotItem);
-    remaining -= addAmount;
-  }
-
-  return currentInventory;
+  if (!newItem) return consolidateInventory(inventory, maxStack);
+  const current = consolidateInventory(inventory, maxStack);
+  return consolidateInventory([...current, newItem], maxStack);
 }
 
 /**

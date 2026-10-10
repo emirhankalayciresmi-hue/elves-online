@@ -8,6 +8,7 @@ import {
   processDungeonCombatTick,
   processMiningTick,
   executeMiningCompletion,
+  consolidateInventory,
 } from '@/domain/gameEngine';
 import { storageManager, StorageKeys } from '@/core/storage/storageManager';
 
@@ -88,6 +89,9 @@ export function useGameTimers(player, setPlayer, onSavePlayer, onAnnouncement) {
         }
 
         if (stateChanged) {
+          if (Array.isArray(updated.inventory)) {
+            updated = { ...updated, inventory: consolidateInventory(updated.inventory) };
+          }
           // Yerel depolamaya anında yaz (veri kaybını sıfır gecikmeyle önle)
           storageManager.setItem(StorageKeys.CHARACTER, updated);
 
