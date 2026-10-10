@@ -197,8 +197,10 @@ export default function MineView({
                     key={idx}
                     className="flex items-center justify-between text-slate-300 py-0.5 border-b border-white/5 last:border-0"
                   >
-                    <span className="text-amber-200">{log.message}</span>
-                    <span className="text-[10px] text-slate-500">{log.time}</span>
+                    <span className="text-amber-200">{log.message || log.text}</span>
+                    <span className="text-[10px] text-slate-500">
+                      {log.time || (log.timestamp ? new Date(log.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '')}
+                    </span>
                   </div>
                 ))}
               </div>

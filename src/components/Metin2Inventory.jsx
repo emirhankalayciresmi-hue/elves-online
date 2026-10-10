@@ -264,10 +264,10 @@ export default function Metin2Inventory({
                   </span>
                 )}
 
-                {/* Metin2 Yığın Sayacı (Maks 200 Adet) */}
-                {item && (Number(item.count) || 1) > 1 && (
-                  <span className="absolute bottom-1 right-1 font-mono text-[9px] font-black text-amber-200 bg-black/90 border border-amber-500/70 rounded px-1 py-0 shadow-[0_0_8px_rgba(0,0,0,0.9)] z-10 select-none">
-                    {item.count}
+                {/* Metin2 Yığın Sayacı (Maks 200 Adet) - 1, 2, 3, 4, 5... 200 */}
+                {item && ((item.isOre || item.type === 'ore') || (Number(item.count) || 1) > 1) && (
+                  <span className="absolute bottom-1 right-1 font-mono text-[10px] font-black text-amber-200 bg-black/95 border border-amber-500/80 rounded px-1.5 py-0 shadow-[0_0_8px_rgba(0,0,0,0.95)] z-10 select-none">
+                    {item.count || 1}
                   </span>
                 )}
 
