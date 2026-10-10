@@ -46,9 +46,11 @@ export const ASSETS = {
   // 6 Adet Avatar İkonu (3 Kız, 3 Erkek)
   avatars: {
     female_warrior: '/assets/avatars/female_warrior.jpg',
+    female_ninja: '/assets/avatars/female_assassin.jpg',
     female_assassin: '/assets/avatars/female_assassin.jpg',
     female_mage: '/assets/avatars/female_mage.jpg',
     male_warrior: '/assets/avatars/male_warrior.jpg',
+    male_ninja: '/assets/avatars/male_assassin.jpg',
     male_assassin: '/assets/avatars/male_assassin.jpg',
     male_mage: '/assets/avatars/male_mage.jpg',
   },
@@ -60,6 +62,13 @@ export const ASSETS = {
       male: '/assets/avatars/male_warrior.jpg',
       portrait: '/assets/avatars/female_warrior.jpg',
       showcase: '/assets/classes/class_warrior.jpg',
+      icon: null,
+    },
+    ninja: {
+      female: '/assets/avatars/female_assassin.jpg',
+      male: '/assets/avatars/male_assassin.jpg',
+      portrait: '/assets/avatars/female_assassin.jpg',
+      showcase: '/assets/classes/class_ninja.jpg',
       icon: null,
     },
     assassin: {

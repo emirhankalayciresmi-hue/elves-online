@@ -28,7 +28,11 @@ export function compareItemStats(activeItem, comparedItem) {
 export function isItemUsableByClass(item, characterClassId) {
   if (!item || !item.classRequired) return true;
   if (item.classRequired === 'all') return true;
-  return item.classRequired.toLowerCase() === (characterClassId || '').toLowerCase();
+  const req = (item.classRequired || '').toLowerCase();
+  const charClass = (characterClassId || '').toLowerCase();
+  if (req === charClass) return true;
+  if ((req === 'ninja' || req === 'assassin') && (charClass === 'ninja' || charClass === 'assassin')) return true;
+  return false;
 }
 
 export function validateInventoryCapacity(inventory = [], maxSlots = 48) {

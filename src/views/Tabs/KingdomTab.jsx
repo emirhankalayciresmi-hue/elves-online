@@ -15,10 +15,10 @@ export default function KingdomTab({ player, layoutMode = 'mobile' }) {
 
   const PLAYERS = [
     { id: 1, name: 'Lord_Aeron', kingdom: 'Aeltherin', class: 'Savaşçı', level: 'Lv. 75', status: 'Online' },
-    { id: 2, name: 'Sylvaen_Shadow', kingdom: 'Sylvandar', class: 'Assassin', level: 'Lv. 72', status: 'Online' },
+    { id: 2, name: 'Sylvaen_Shadow', kingdom: 'Sylvandar', class: 'Ninja', level: 'Lv. 72', status: 'Online' },
     { id: 3, name: 'Mage_Loriel', kingdom: 'Lorvathiel', class: 'Büyücü', level: 'Lv. 68', status: 'Offline' },
     { id: 4, name: 'OceanGuardian', kingdom: 'Ithilmar', class: 'Savaşçı', level: 'Lv. 65', status: 'Online' },
-    { id: 5, name: 'SilverBow', kingdom: 'Sylvandar', class: 'Assassin', level: 'Lv. 61', status: 'Offline' },
+    { id: 5, name: 'SilverBow', kingdom: 'Sylvandar', class: 'Ninja', level: 'Lv. 61', status: 'Offline' },
   ];
 
   const filteredPlayers = activeSubmenu === 'online'

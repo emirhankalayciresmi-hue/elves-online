@@ -46,7 +46,7 @@ export function getPlayerProfile(playerInfo, activePlayer = null, guildsList = n
       exp: activePlayer.exp || 0,
       maxExp: activePlayer.maxExp || 1000,
       classId,
-      className: activePlayer.className || (classId === 'warrior' ? 'Savaşçı' : classId === 'assassin' ? 'Assassin' : 'Büyücü'),
+      className: activePlayer.className || (classId === 'warrior' ? 'Savaşçı' : (classId === 'ninja' || classId === 'assassin') ? 'Ninja' : 'Büyücü'),
       gender,
       avatar,
       kingdom: activePlayer.kingdom || 'Aeltherin',
@@ -67,14 +67,14 @@ export function getPlayerProfile(playerInfo, activePlayer = null, guildsList = n
   if (playerInfo.senderClass || playerInfo.characterClass || playerInfo.class) {
     const c = (playerInfo.senderClass || playerInfo.characterClass || playerInfo.class).toLowerCase();
     if (c.includes('büyü') || c.includes('mage')) classId = 'mage';
-    else if (c.includes('assassin') || c.includes('ninja') || c.includes('suikast')) classId = 'assassin';
+    else if (c.includes('ninja') || c.includes('assassin') || c.includes('suikast')) classId = 'ninja';
     else classId = 'warrior';
   } else {
-    const classes = ['warrior', 'assassin', 'mage'];
+    const classes = ['warrior', 'ninja', 'mage'];
     classId = classes[hash % 3];
   }
 
-  const className = classId === 'warrior' ? 'Savaşçı' : classId === 'assassin' ? 'Assassin' : 'Büyücü';
+  const className = classId === 'warrior' ? 'Savaşçı' : (classId === 'ninja' || classId === 'assassin') ? 'Ninja' : 'Büyücü';
 
   // Cinsiyet ve Avatar
   const gender = hash % 2 === 0 ? 'female' : 'male';
@@ -141,7 +141,7 @@ export function getPlayerProfile(playerInfo, activePlayer = null, guildsList = n
   const baseHp = 500 + level * 40;
   const baseMana = 500 + level * 25;
   const str = classId === 'warrior' ? level * 3 : level;
-  const agi = classId === 'assassin' ? level * 3 : level;
+  const agi = (classId === 'ninja' || classId === 'assassin') ? level * 3 : level;
   const int = classId === 'mage' ? level * 3 : level;
   const stats = {
     ...DEFAULT_PLAYER_STATS,

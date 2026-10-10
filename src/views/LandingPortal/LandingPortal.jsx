@@ -35,7 +35,7 @@ import {
 import { fetchTopLeaderboard, fetchPlayerCounts } from '../../services/cloudCharacterService';
 import { ASSETS } from '../../config/assets';
 
-// 4 Krallık Tanımları: Mini Hikaye, Bayrak, Manzara ve Büyük Elf Ağacı
+// 4 Krallık Tanımları: Mini Hikaye, Bayrak ve Manzara
 const KINGDOM_SHOWCASE = [
   {
     id: 'aeltherin',
@@ -45,9 +45,6 @@ const KINGDOM_SHOWCASE = [
     flagName: 'Aeltherin Krallığı Sancağı',
     flagImg: ASSETS.kingdoms.aeltherin.crest,
     landscapeImg: ASSETS.kingdoms.aeltherin.banner,
-    treeImg: ASSETS.trees.aeltherin,
-    treeTitle: 'Kadim Altın Işık Ağacı',
-    treeDescription: 'Aeltherin Krallığı’nın gökyüzüne uzanan altın yapraklı kutsal ağacı. Saf güneş ışığının ve kadim hanedanların koruyucusu.',
     badgeColor: 'from-amber-400/20 to-amber-600/10 text-amber-300 border-amber-500/40',
     accentColor: '#f59e0b',
     glowColor: 'rgba(245, 158, 11, 0.25)',
@@ -60,9 +57,6 @@ const KINGDOM_SHOWCASE = [
     flagName: 'Sylvandar Krallığı Sancağı',
     flagImg: ASSETS.kingdoms.sylvandar.crest,
     landscapeImg: ASSETS.kingdoms.sylvandar.banner,
-    treeImg: ASSETS.trees.sylvandar,
-    treeTitle: 'Kutsal Zümrüt Yaşam Ağacı',
-    treeDescription: 'Yüzyıllık kutsal ormanın kalbinde parıldayan devasa zümrüt hayat ağacı. Tüm doğanın ve kadim yaratıkların yaşam kaynağı.',
     badgeColor: 'from-emerald-400/20 to-emerald-600/10 text-emerald-300 border-emerald-500/40',
     accentColor: '#10b981',
     glowColor: 'rgba(16, 185, 129, 0.25)',
@@ -75,9 +69,6 @@ const KINGDOM_SHOWCASE = [
     flagName: 'Lorvathiel Krallığı Sancağı',
     flagImg: ASSETS.kingdoms.lorvathiel.crest,
     landscapeImg: ASSETS.kingdoms.lorvathiel.banner,
-    treeImg: ASSETS.trees.lorvathiel,
-    treeTitle: 'Hilal & Gümüş Gece Ağacı',
-    treeDescription: 'Gümüş yıldızların ve parıldayan hilal ayın altında parlayan mistik gece ağacı. Sessiz gölgelerin ve kadim bilgeliğin beşiği.',
     badgeColor: 'from-indigo-400/20 to-indigo-600/10 text-indigo-300 border-indigo-500/40',
     accentColor: '#818cf8',
     glowColor: 'rgba(129, 140, 248, 0.25)',
@@ -90,9 +81,6 @@ const KINGDOM_SHOWCASE = [
     flagName: 'Ithilmar Krallığı Sancağı',
     flagImg: ASSETS.kingdoms.ithilmar.crest,
     landscapeImg: ASSETS.kingdoms.ithilmar.banner,
-    treeImg: ASSETS.trees.ithilmar,
-    treeTitle: 'Kristal Sis & Okyanus Ağacı',
-    treeDescription: 'Köpüren masmavi dalgaların ve parıldayan kristallerin ortasında yükselen kadim okyanus ağacı. Derin suların fısıltısını taşır.',
     badgeColor: 'from-sky-400/20 to-sky-600/10 text-sky-300 border-sky-500/40',
     accentColor: '#38bdf8',
     glowColor: 'rgba(56, 189, 248, 0.25)',
@@ -104,42 +92,42 @@ const CLASSES_SHOWCASE = [
   {
     id: 'warrior',
     name: 'Savaşçı',
-    title: 'Asil Muhafız & Şövalye',
-    description: 'Zarif elven zırhları ve çift elli kılıçlarıyla cephenin en ön saflarında dimdik duran onurlu savaşçılar. Yüksek fiziksel savunma ve sarsılmaz dayanıklılıkla düşman ordularını tek başına karşılarlar.',
+    title: '',
+    description: 'Korkusuz, cesur ve mücadeleci bir savaş ruhu. Meydanlarda geri adım atmayan kararlılığıyla kadim efsanelere adını kazıyan öncüler.',
     image: ASSETS.classes.warrior.showcase,
     avatars: [
       { gender: 'Kadın', src: ASSETS.classes.warrior.female },
       { gender: 'Erkek', src: ASSETS.classes.warrior.male },
     ],
-    features: ['Ağır Zırh ve Kalkan', 'Ön Cephe Hakimiyeti', 'Yüksek Sağlık (HP)'],
+    features: ['Korkusuz & Cesur', 'Sarsılmaz Kararlılık', 'Mücadeleci Ruh'],
     themeBorder: 'border-amber-500/40',
     themeText: 'text-amber-300',
   },
   {
     id: 'ninja',
     name: 'Ninja',
-    title: 'Gölge Hançeri & Suikastçı',
-    description: 'Sessizlik içinde süzülen, rüzgar kadar hızlı ve ölümcül vuruşlarıyla hedeflerini göz açıp kapayıncaya kadar avlayan gölge ustaları. Çift hançer ve kritik darbe ustalığıyla en tehlikeli tehditleri ortadan kaldırırlar.',
-    image: ASSETS.classes.assassin.showcase,
+    title: '',
+    description: 'Hızlı, çevik ve keskin bir odaklanma. Rüzgar gibi sessiz, adımlarında kararlı ve hedefine odaklanan gölge ustaları.',
+    image: ASSETS.classes.ninja.showcase,
     avatars: [
-      { gender: 'Kadın', src: ASSETS.classes.assassin.female },
-      { gender: 'Erkek', src: ASSETS.classes.assassin.male },
+      { gender: 'Kadın', src: ASSETS.classes.ninja.female },
+      { gender: 'Erkek', src: ASSETS.classes.ninja.male },
     ],
-    features: ['Çift Hançer & Gizlilik', 'Ölümcül Kritik Vuruş', 'Kusursuz Çeviklik (AGI)'],
+    features: ['Çevik & Hızlı', 'Yüksek Odaklanma', 'Gizemli ve Kararlı'],
     themeBorder: 'border-purple-500/40',
     themeText: 'text-purple-300',
   },
   {
     id: 'mage',
     name: 'Büyücü',
-    title: 'Yüksek Arkanist',
-    description: 'Kadim rünlerin ve elementlerin enerjisini zarafetle şekillendiren, gerçekliğin dokusunu değiştirebilen kadim büyücüler. Alan etkili yıkıcı arkan fırtınaları ve koruyucu enerji kalkanlarıyla savaşı uzaktan yönetirler.',
+    title: '',
+    description: 'Kadim bilgeliğe ve derin bir zihne sahip bir karakter. Soğukkanlı düşünce yapısı, sabrı ve planlı yaklaşımıyla öne çıkar.',
     image: ASSETS.classes.mage.showcase,
     avatars: [
       { gender: 'Kadın', src: ASSETS.classes.mage.female },
       { gender: 'Erkek', src: ASSETS.classes.mage.male },
     ],
-    features: ['Yıkıcı Alan Büyüleri', 'Kadim Rün Kalkanları', 'Yüksek Zeka (INT)'],
+    features: ['Bilge & Stratejik', 'Kadim Zihin', 'Derin Odaklanma'],
     themeBorder: 'border-sky-500/40',
     themeText: 'text-sky-300',
   },
@@ -548,21 +536,21 @@ export default function LandingPortal({
               </div>
             </div>
 
-            {/* B. 4 ADET BÜYÜK ELF AĞACI VE KRALLIKLAR BÖLÜMÜ */}
+            {/* B. 4 BÜYÜK ELF KRALLIĞI BÖLÜMÜ */}
             <div className="space-y-10">
               <div className="text-center space-y-2">
                 <span className="text-xs font-mono text-amber-400 tracking-[0.25em] uppercase">
-                  KADİM HANEDANLAR VE KUTSAL AĞAÇLAR
+                  KADİM DİYARLAR
                 </span>
                 <h2 className="font-cinzel text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-100 via-amber-300 to-amber-200">
-                  4 Büyük Elf Ağacı & Krallıklar
+                  4 Büyük Elf Krallığı
                 </h2>
                 <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mt-2" />
               </div>
 
               {/* 4 Krallık Listesi */}
-              <div className="space-y-12">
-                {KINGDOM_SHOWCASE.map((k, idx) => (
+              <div className="space-y-10">
+                {KINGDOM_SHOWCASE.map((k) => (
                   <div
                     key={k.id}
                     className="relative rounded-2xl bg-[#060c0f] border border-amber-500/30 overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] transition-all hover:border-amber-400/60"
@@ -599,87 +587,46 @@ export default function LandingPortal({
                           </p>
                         </div>
                       </div>
-
-                      <div className="text-right">
-                        <span className="text-[10px] font-mono text-slate-400 block">Kadim Kutsal Ağaç</span>
-                        <span className="text-xs font-cinzel font-bold text-emerald-400">
-                          {k.treeTitle}
-                        </span>
-                      </div>
                     </div>
 
-                    {/* Ana Gövde: Büyük Elf Ağacı Fotoğrafı & Krallık Fotoğrafı & Mini Hikaye */}
+                    {/* Ana Gövde: Krallık Manzarası & Mini Hikaye */}
                     <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                      {/* SOL / BÜYÜK GÖRSEL: BÜYÜK ELF AĞACI FOTOĞRAFI (16:9 Geniş & Yüksek Kalite) */}
-                      <div className="lg:col-span-7 space-y-3">
-                        <div className="flex items-center justify-between text-xs font-mono text-amber-300">
-                          <span className="flex items-center gap-1.5 font-cinzel font-bold">
-                            <Sparkles className="w-4 h-4 text-amber-400" />
-                            {k.name} - {k.treeTitle}
-                          </span>
-                          <span className="text-[10px] text-slate-400">Büyük Elf Ağacı Fotoğrafı</span>
-                        </div>
-
+                      {/* SOL: KRALLIK BAŞKENT & MANZARA */}
+                      <div className="lg:col-span-7 space-y-2">
                         <div
-                          onClick={() => setPreviewImage({ src: k.treeImg, title: `${k.name} - ${k.treeTitle}` })}
+                          onClick={() => setPreviewImage({ src: k.landscapeImg, title: `${k.name} Başkenti` })}
                           className="relative rounded-xl overflow-hidden border-2 border-amber-500/40 shadow-[0_0_30px_rgba(0,0,0,0.9)] aspect-video cursor-pointer group"
                         >
                           <img
-                            src={k.treeImg}
-                            alt={`${k.name} Büyük Elf Ağacı`}
+                            src={k.landscapeImg}
+                            alt={`${k.name} Manzarası`}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-30 transition-opacity" />
 
                           {/* Hover Overlay */}
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <span className="px-3 py-1.5 rounded-lg bg-black/75 border border-amber-400 text-amber-300 text-xs font-cinzel flex items-center gap-1.5">
                               <ZoomIn className="w-4 h-4" />
-                              <span>Tam Boyut Görüntüle</span>
+                              <span>Büyüt</span>
                             </span>
                           </div>
 
-                          <div className="absolute bottom-3 left-3 right-3 text-left">
-                            <p className="text-xs text-slate-200 font-sans line-clamp-2 drop-shadow-md">
-                              {k.treeDescription}
-                            </p>
+                          <div className="absolute bottom-3 left-3 px-3 py-1 rounded bg-black/75 backdrop-blur-sm border border-amber-500/30 text-xs font-cinzel text-amber-200">
+                            {k.name} Başkenti
                           </div>
                         </div>
                       </div>
 
-                      {/* SAĞ: MİNİ HİKAYE VE KRALLIK MANZARA FOTOĞRAFI */}
-                      <div className="lg:col-span-5 space-y-5">
-                        {/* Mini Hikaye Bölümü */}
-                        <div className="bg-[#0a1419]/80 border border-slate-800 rounded-xl p-5 space-y-2">
+                      {/* SAĞ: MİNİ HİKAYE */}
+                      <div className="lg:col-span-5 space-y-4">
+                        <div className="bg-[#0a1419]/90 border border-slate-800 rounded-xl p-6 space-y-3">
                           <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400/90 block">
-                            Krallık Hakkında Mini Hikaye
+                            Kadim Krallık Hikayesi
                           </span>
-                          <blockquote className="text-sm sm:text-base font-cormorant italic text-slate-200 leading-relaxed border-l-2 border-amber-400 pl-3.5">
+                          <blockquote className="text-sm sm:text-base font-cormorant italic text-slate-200 leading-relaxed border-l-2 border-amber-400 pl-4">
                             "{k.description}"
                           </blockquote>
-                        </div>
-
-                        {/* Krallık Fotoğrafı (Landscape / Manzara) */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-                            <span>Krallık Fotoğrafı & Başkent</span>
-                            <span className="text-[10px] text-amber-400/80">Manzara</span>
-                          </div>
-
-                          <div
-                            onClick={() => setPreviewImage({ src: k.landscapeImg, title: `${k.name} Başkenti` })}
-                            className="relative rounded-xl overflow-hidden border border-amber-500/30 aspect-[16/9] cursor-pointer group shadow-lg"
-                          >
-                            <img
-                              src={k.landscapeImg}
-                              alt={`${k.name} Manzarası`}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
-                            <div className="absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded bg-black/70 backdrop-blur-sm border border-amber-500/30 text-[11px] font-cinzel text-amber-200">
-                              {k.name} Manzarası
-                            </div>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -688,7 +635,7 @@ export default function LandingPortal({
               </div>
             </div>
 
-            {/* C. OYUNDAKİ 3 KARAKTER SINIFININ ANLATIMI VE FOTOĞRAFLARI (SAVAŞÇI, NİNJA, BÜYÜCÜ) */}
+            {/* C. OYUNDAKİ 3 KARAKTER SINIFININ ANLATIMI (SAVAŞÇI, NİNJA, BÜYÜCÜ) */}
             <div className="space-y-8 pt-4">
               <div className="text-center space-y-2">
                 <span className="text-xs font-mono text-amber-400 tracking-[0.25em] uppercase">
@@ -698,7 +645,7 @@ export default function LandingPortal({
                   Oyundaki 3 Karakter Sınıfı
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
-                  Savaşçı, Ninja ve Büyücü. Kendi savaş stilinizi seçin, elven yeteneklerinizle diyara adınızı yazdırın.
+                  Savaşçı, Ninja ve Büyücü. Kendi karakterinizi seçin, cesaretiniz ve stratejinizle kadim diyara adınızı yazdırın.
                 </p>
                 <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mt-2" />
               </div>
@@ -710,14 +657,14 @@ export default function LandingPortal({
                     key={cls.id}
                     className="rounded-2xl bg-[#060c0f] border border-amber-500/30 overflow-hidden shadow-[0_0_35px_rgba(0,0,0,0.8)] flex flex-col group hover:border-amber-400 transition-all"
                   >
-                    {/* Sınıf Fotoğrafı (Büyük Yüksek Kalite Poster) */}
+                    {/* Sınıf Posteri */}
                     <div
                       onClick={() => setPreviewImage({ src: cls.image, title: `${cls.name} Sınıfı` })}
                       className="relative aspect-[3/4] overflow-hidden cursor-pointer"
                     >
                       <img
                         src={cls.image}
-                        alt={`${cls.name} Sınıfı Fotoğrafı`}
+                        alt={`${cls.name} Sınıfı`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#060c0f] via-transparent to-transparent opacity-90" />
@@ -737,9 +684,6 @@ export default function LandingPortal({
                         <h3 className="font-cinzel text-2xl font-bold text-amber-100">
                           {cls.name}
                         </h3>
-                        <p className={`text-xs font-cinzel font-semibold ${cls.themeText}`}>
-                          {cls.title}
-                        </p>
                       </div>
                     </div>
 
@@ -980,7 +924,7 @@ export default function LandingPortal({
                               : 'Ithilmar'}
                           </td>
                           <td className="py-3.5 px-4 capitalize text-slate-400">
-                            {char.class_id === 'assassin' ? 'Ninja' : char.class_id === 'mage' ? 'Büyücü' : 'Savaşçı'}
+                            {(char.class_id === 'ninja' || char.class_id === 'assassin') ? 'Ninja' : char.class_id === 'mage' ? 'Büyücü' : 'Savaşçı'}
                           </td>
                           <td className="py-3.5 px-4 text-center font-bold text-amber-400">
                             Lv. {char.level}

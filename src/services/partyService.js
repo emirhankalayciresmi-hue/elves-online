@@ -448,7 +448,7 @@ export function invitePlayerToPartyService(player, targetName, parties) {
   }
 
   // MMORPG simülasyonu: Davet edilen oyuncu gruba kabul eder ve katılır
-  const mockClasses = ['Savaşçı', 'Büyücü', 'Okçu', 'Assassin'];
+  const mockClasses = ['Savaşçı', 'Büyücü', 'Ninja'];
   const randomClass = mockClasses[Math.floor(Math.random() * mockClasses.length)];
   const randomLevel = Math.max(party.minLevel || 1, Math.floor(Math.random() * 8) + 5);
 

@@ -123,9 +123,11 @@ export default function ClassSelect({
                         )}
                       </h3>
                     </div>
-                    <p className="text-xs sm:text-sm text-amber-400/80 font-cinzel tracking-wider mt-0.5">
-                      {cls.title}
-                    </p>
+                    {cls.title && (
+                      <p className="text-xs sm:text-sm text-amber-400/80 font-cinzel tracking-wider mt-0.5">
+                        {cls.title}
+                      </p>
+                    )}
 
                     <p className="mt-2.5 text-xs sm:text-sm text-slate-300/90 font-cormorant leading-relaxed">
                       {cls.description}
